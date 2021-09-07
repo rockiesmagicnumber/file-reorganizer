@@ -1,0 +1,14 @@
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\MusicReorganizer.exe.config
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\MusicReorganizer.exe
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\MusicReorganizer.pdb
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\ICSharpCode.SharpZipLib.dll
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\ICSharpCode.SharpZipLib.pdb
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\ICSharpCode.SharpZipLib.xml
+E:\Repos\MusicReorganizer\MusicReorganizer\obj\Debug\MusicReorganizer.csproj.CoreCompileInputs.cache
+E:\Repos\MusicReorganizer\MusicReorganizer\obj\Debug\MusicReorganizer.csproj.CopyComplete
+E:\Repos\MusicReorganizer\MusicReorganizer\obj\Debug\MusicReorganizer.exe
+E:\Repos\MusicReorganizer\MusicReorganizer\obj\Debug\MusicReorganizer.pdb
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\TagLibSharp.dll
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\TagLibSharp.pdb
+E:\Repos\MusicReorganizer\MusicReorganizer\bin\Debug\TagLibSharp.xml
+E:\Repos\MusicReorganizer\MusicReorganizer\obj\Debug\MusicReorganizer.csproj.AssemblyReference.cache
