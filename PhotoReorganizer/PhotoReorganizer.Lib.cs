@@ -103,16 +103,38 @@ public class PhotoReorganizer
     {
         var file = TagLib.File.Create(filePath);
         var image = file as TagLib.Image.File;
-        string destinationDirectory = string.Empty;
-        if (image?.ImageTag?.DateTime.HasValue ?? false)
+
+        // attempt to get photo datetime from metadata
+        if ((image?.ImageTag?.DateTime.HasValue ?? false) && image.ImageTag.DateTime.Value is DateTime dtt && dtt != default)
         {
-            // attempt to 
+            string destinationDirectory = string.Empty;
+
+            // attempt to pull photo metadata - the date the photo was taken
             DateTime photoDt = image.ImageTag.DateTime.Value;
+
+            // get datetime directory
             destinationDirectory = this.GetDirectoryFromDateTime(photoDt);
             Directory.CreateDirectory(destinationDirectory);
-            File.Copy(filePath, Path.Combine(destinationDirectory, Path.GetFileName(filePath)));
+            string destinationFilePath = Path.Combine(destinationDirectory, Path.GetFileName(filePath));
+
+            // check for duplicates, rename file if they exist
+            if (File.Exists(destinationFilePath))
+            {
+                int existing = 0;
+                do
+                {
+                    existing++;
+                    destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                }
+                while (File.Exists(destinationFilePath));
+            }
+
+            // copy file to new destination
+            File.Copy(filePath, destinationFilePath);
             return destinationDirectory;
         }
+
+        // resort to the actual file creation date
         return ProcessMiscFile(filePath);
     }
 
