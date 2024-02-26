@@ -1,9 +1,3 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/MusicReorganizer/bin/Debug
-/MusicReorganizer/obj/Debug
-/WallpaperReorganizer/bin/Debug/netcoreapp3.1
-/WallpaperReorganizer/obj
-/.vs
+**/bin
+**/obj
+packages/

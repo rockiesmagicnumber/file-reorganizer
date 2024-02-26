@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicReorganizer", "MusicRe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallpaperReorganizer", "WallpaperReorganizer\WallpaperReorganizer.csproj", "{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoReorganizer", "PhotoReorganizer\PhotoReorganizer.csproj", "{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
