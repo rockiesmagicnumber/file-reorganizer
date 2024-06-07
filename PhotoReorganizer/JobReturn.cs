@@ -1,9 +1,15 @@
-namespace PhotoLibraryCleaner.Lib;
+// <copyright file="JobReturn.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
+// </copyright>
 
-public class JobReturn
+namespace PhotoLibraryCleaner.Lib
 {
-    public bool Success { get; set; }
-    public Exception? Error { get; set; }
+    public class JobReturn
+    {
+        public bool Success { get; set; }
 
-    public static implicit operator bool(JobReturn resultBool) => resultBool.Success;
+        public Exception? Error { get; set; }
+
+        public static implicit operator bool(JobReturn resultBool) => resultBool.Success;
+    }
 }

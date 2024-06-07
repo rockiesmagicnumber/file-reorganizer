@@ -1,17 +1,13 @@
-namespace PhotoLibraryCleaner.Lib;
+// <copyright file="Options.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
+// </copyright>
 
-public class Options
+namespace PhotoLibraryCleaner.Lib
 {
-    public DirectoryInfo RootDirectoryInfo { get; private set; }
-
-    public bool IsReadOnly { get; private set; }
-
-    public bool DeleteDuplicates { get; private set; }
-
-    public Options(DirectoryInfo directoryInfo, bool isReadOnly = false, bool deleteDuplicates = false)
+    public record PhotoReorganizerOptions(DirectoryInfo rootDirectoryInfo, bool isReadOnly = false, bool deleteDuplicates = false)
     {
-        this.RootDirectoryInfo = directoryInfo;
-        this.IsReadOnly = isReadOnly;
-        this.DeleteDuplicates = deleteDuplicates;
+        public DirectoryInfo RootDirectoryInfo { get; private set; } = rootDirectoryInfo;
+        public bool IsReadOnly { get; private set; } = isReadOnly;
+        public bool DeleteDuplicates { get; private set; } = deleteDuplicates;
     }
 }
