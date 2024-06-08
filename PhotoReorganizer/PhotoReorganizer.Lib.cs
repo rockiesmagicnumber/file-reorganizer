@@ -5,6 +5,7 @@
 namespace PhotoLibraryCleaner.Lib
 {
     using System.IO.Compression;
+    using System.Text.Json;
 
     public class PhotoReorganizer
     {
@@ -12,10 +13,19 @@ namespace PhotoLibraryCleaner.Lib
 
         private PhotoReorganizerOptions Options { get; set; }
 
+        private List<Exception> Errors { get; set; }
+
         public PhotoReorganizer(PhotoReorganizerOptions options)
         {
             this.Options = options;
             this.ProcessedFiles = [];
+            this.Errors = [];
+            if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.ProcessedDirectoryName))
+                && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
+            {
+                string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
+                this.ProcessedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+            }
         }
 
         public JobReturn OrganizePhotos()
@@ -24,7 +34,10 @@ namespace PhotoLibraryCleaner.Lib
             try
             {
                 this.ProcessDirectory(this.Options.RootDirectoryInfo);
-                jobReturn.Success = true;
+                jobReturn.Success = this.Errors.Count == 0;
+                jobReturn.Error = new AggregateException(this.Errors);
+                string jsArchive = JsonSerializer.Serialize(this.ProcessedFiles);
+                File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
             }
             catch (Exception ex)
             {
@@ -47,17 +60,22 @@ namespace PhotoLibraryCleaner.Lib
             }
 
             // process all child directories
-            int childDirectoriesCount = childDirectories.Count();
-            for (int i = 0; i < childDirectoriesCount; i++)
+            foreach (var child in childDirectories)
             {
-                var child = childDirectories[i];
                 this.ProcessDirectory(child);
             }
 
             // process all NOT-zip files
             foreach (var cf in childFiles.Where(c => !c.IsZip()))
             {
-                this.ProcessFile(cf);
+                try
+                {
+                    this.ProcessFile(cf);
+                }
+                catch (Exception ex)
+                {
+                    this.Errors.Add(ex);
+                }
             }
         }
 
@@ -107,19 +125,17 @@ namespace PhotoLibraryCleaner.Lib
 
         private string ProcessPhoto(string filePath)
         {
-            var file = TagLib.File.Create(filePath);
-            var image = file as TagLib.Image.File;
+            // capture our filepath as a TagLib Image
+            TagLib.File file = TagLib.File.Create(filePath);
 
             // attempt to get photo datetime from metadata
-            if (image?.ImageTag?.DateTime is DateTime dtt && dtt != default)
+            if (file is TagLib.Image.File image && image?.ImageTag?.DateTime is DateTime dtt && dtt != default)
             {
-                string destinationDirectory = string.Empty;
-
                 // attempt to pull photo metadata - the date the photo was taken
                 DateTime photoDt = image.ImageTag.DateTime.Value;
 
                 // get datetime directory
-                destinationDirectory = this.GetDirectoryFromDateTime(photoDt);
+                string destinationDirectory = this.GetDirectoryFromDateTime(photoDt);
                 Directory.CreateDirectory(destinationDirectory);
                 string destinationFilePath = Path.Combine(destinationDirectory, Path.GetFileName(filePath));
 
@@ -157,7 +173,13 @@ namespace PhotoLibraryCleaner.Lib
             FileInfo file1 = new FileInfo(filePath);
             string destinationDirectory = this.GetDirectoryFromDateTime(file1.CreationTime);
             Directory.CreateDirectory(destinationDirectory);
-            File.Copy(filePath, Path.Combine(destinationDirectory, Path.GetFileName(filePath)));
+            string destFileName = Path.Combine(destinationDirectory, Path.GetFileName(filePath));
+            if (File.Exists(destFileName))
+            {
+                destFileName = Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
+            }
+
+            File.Copy(filePath, destFileName);
             return destinationDirectory;
         }
 
