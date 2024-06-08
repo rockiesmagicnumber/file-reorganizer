@@ -20,7 +20,7 @@ namespace PhotoLibraryCleaner.Lib
 
         public JobReturn OrganizePhotos()
         {
-            JobReturn jobReturn = new ();
+            JobReturn jobReturn = new();
             try
             {
                 this.ProcessDirectory(this.Options.RootDirectoryInfo);
@@ -37,8 +37,8 @@ namespace PhotoLibraryCleaner.Lib
 
         private void ProcessDirectory(DirectoryInfo directory)
         {
-            var childDirectories = directory.EnumerateDirectories();
-            var childFiles = directory.EnumerateFiles().Select(x => x.FullName);
+            var childDirectories = directory.EnumerateDirectories().ToList();
+            var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
 
             // Extract all Zip files first so we can process their child directories
             foreach (var cf in childFiles.Where(c => c.IsZip()))
@@ -47,17 +47,17 @@ namespace PhotoLibraryCleaner.Lib
             }
 
             // process all child directories
-            for (int i = 0; i < childDirectories.Count(); i++)
+            int childDirectoriesCount = childDirectories.Count();
+            for (int i = 0; i < childDirectoriesCount; i++)
             {
-                var child = childDirectories.ElementAt(i);
+                var child = childDirectories[i];
                 this.ProcessDirectory(child);
             }
 
             // process all NOT-zip files
-            for (int i = 0; i > childFiles.Where(c => !c.IsZip()).Count(); i++)
+            foreach (var cf in childFiles.Where(c => !c.IsZip()))
             {
-                var file = childFiles.ElementAt(i);
-                this.ProcessFile(file);
+                this.ProcessFile(cf);
             }
         }
 
@@ -76,7 +76,7 @@ namespace PhotoLibraryCleaner.Lib
             }
 
             // check if our dictionary already has that checksum
-            if (this.ProcessedFiles.ContainsKey(fileSHAchksum))
+            if (this.ProcessedFiles.TryGetValue(fileSHAchksum, out _))
             {
                 if (this.Options.DeleteDuplicates)
                 {
@@ -111,7 +111,7 @@ namespace PhotoLibraryCleaner.Lib
             var image = file as TagLib.Image.File;
 
             // attempt to get photo datetime from metadata
-            if ((image?.ImageTag?.DateTime.HasValue ?? false) && image.ImageTag.DateTime.Value is DateTime dtt && dtt != default)
+            if (image?.ImageTag?.DateTime is DateTime dtt && dtt != default)
             {
                 string destinationDirectory = string.Empty;
 
@@ -165,12 +165,17 @@ namespace PhotoLibraryCleaner.Lib
         {
             if (!dt.HasValue)
             {
-                return string.Empty;
+                return Constants.ProcessedDirectoryName;
             }
             else
             {
                 DateTime fileDt = dt.Value;
-                return Path.Combine(this.Options.RootDirectoryInfo.FullName, fileDt.Year.ToString("0000"), fileDt.Month.ToString("00"), fileDt.Day.ToString("00"));
+                return Path.Combine(
+                    this.Options.RootDirectoryInfo.FullName,
+                    Constants.ProcessedDirectoryName,
+                    fileDt.Year.ToString("0000"),
+                    fileDt.Month.ToString("00"),
+                    fileDt.Day.ToString("00"));
             }
         }
     }

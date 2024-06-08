@@ -6,10 +6,14 @@ namespace PhotoLibraryCleaner.Lib
 {
     public static class Constants
     {
+        public static string ProcessedDirectoryName = "Processed";
 
         public static class FileExtensions
         {
-            public const string ZipFileExtension = ".zip";
+            public static class Zip
+            {
+                public const string ZipFileExtension = ".zip";
+            }
 
             public static class Image
             {

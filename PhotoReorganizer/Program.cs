@@ -27,8 +27,8 @@ namespace PhotoLibraryCleaner
                 throw new ArgumentNullException("Must specify an existing directory", null as Exception);
             }
 
-            bool readOnly = false;// args.Contains("-ro") || args.Contains("--read-only");
-            bool deleteDupes = false;// args.Contains("--delete-duplicates");
+            bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
+            bool deleteDupes = false; // args.Contains("--delete-duplicates");
 
             PhotoReorganizerOptions executionOptions = new PhotoReorganizerOptions(executionDirectory, readOnly, deleteDupes);
             PhotoReorganizer pr = new PhotoReorganizer(executionOptions);

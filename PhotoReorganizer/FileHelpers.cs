@@ -11,7 +11,7 @@ namespace PhotoLibraryCleaner.Lib
         public static bool IsPhoto(this string filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath);
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
 
             // Check against a list of common photo file extensions
             return extension is Constants.FileExtensions.Image.JPEGFileExtension or
@@ -29,10 +29,10 @@ namespace PhotoLibraryCleaner.Lib
         public static bool IsZip(this string filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath);
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
 
             // Check against a list of common .zips - we're not gonna bother with gzip or whatever right now
-            return extension == Constants.FileExtensions.ZipFileExtension;
+            return extension == Constants.FileExtensions.Zip.ZipFileExtension;
         }
 
         private static string GetChecksum(string file)
