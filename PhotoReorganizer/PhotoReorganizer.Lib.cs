@@ -6,9 +6,12 @@ namespace PhotoLibraryCleaner.Lib
 {
     using System.IO.Compression;
     using System.Text.Json;
+    using log4net;
+    using log4net.Util;
 
     public class PhotoReorganizer
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(PhotoReorganizer));
         private FileDictionary<NString, List<string>> ProcessedFiles;
 
         private PhotoReorganizerOptions Options { get; set; }
@@ -30,22 +33,30 @@ namespace PhotoLibraryCleaner.Lib
 
         public JobReturn OrganizePhotos()
         {
-            JobReturn jobReturn = new();
+            Log.Enter(nameof(this.OrganizePhotos));
             try
             {
+                JobReturn jobReturn = new();
                 this.ProcessDirectory(this.Options.RootDirectoryInfo);
                 jobReturn.Success = this.Errors.Count == 0;
                 jobReturn.Error = new AggregateException(this.Errors);
                 string jsArchive = JsonSerializer.Serialize(this.ProcessedFiles);
                 File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
+                return jobReturn;
             }
             catch (Exception ex)
             {
-                jobReturn.Error = ex;
-                jobReturn.Success = false;
+                Log.Error("Error", ex);
+                return new JobReturn()
+                {
+                    Error = ex,
+                    Success = false,
+                };
             }
-
-            return jobReturn;
+            finally
+            {
+                Log.Exit(nameof(this.OrganizePhotos));
+            }
         }
 
         private void ProcessDirectory(DirectoryInfo directory)

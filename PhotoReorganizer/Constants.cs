@@ -6,7 +6,10 @@ namespace PhotoLibraryCleaner.Lib
 {
     public static class Constants
     {
-        public static string ProcessedDirectoryName = "Processed";
+        public const string ErrorDirectoryName = "Errors";
+        public const string LogDirectoryName = "Logs";
+        public const string ProcessedDirectoryName = "Processed";
+        public const string SokkaCorpDirectoryName = "SokkaCorp";
 
         public static class FileExtensions
         {
