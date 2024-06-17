@@ -5,7 +5,7 @@
 namespace PhotoLibraryCleaner
 {
     using System.IO;
-    using System.Xml;
+    using System.Security.Cryptography;
     using log4net;
     using log4net.Config;
     using PhotoLibraryCleaner.Lib;
@@ -44,18 +44,11 @@ namespace PhotoLibraryCleaner
 
             bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
             bool deleteDupes = false; // args.Contains("--delete-duplicates");
-
             PhotoReorganizerOptions executionOptions = new PhotoReorganizerOptions(executionDirectory, readOnly, deleteDupes);
             PhotoReorganizer pr = new PhotoReorganizer(executionOptions);
-            var success = pr.OrganizePhotos();
-            if (success)
-            {
-                Console.WriteLine("wooo it worked");
-            }
-            else
-            {
-                Console.Error.WriteLine(success.Error);
-            }
+            JobReturn success = pr.OrganizePhotos();
+            Console.WriteLine("Success: " + success.Success.ToString());
+            Console.WriteLine("\tHandled File Errors: " + success.HandledError.InnerExceptions.Count.ToString());
         }
     }
 }

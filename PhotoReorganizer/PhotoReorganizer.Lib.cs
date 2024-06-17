@@ -4,15 +4,15 @@
 
 namespace PhotoLibraryCleaner.Lib
 {
-    using System.IO.Compression;
+    using System.Reflection.Metadata;
+    using System.Security.Cryptography;
     using System.Text.Json;
     using log4net;
-    using log4net.Util;
 
     public class PhotoReorganizer
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(PhotoReorganizer));
-        private FileDictionary<NString, List<string>> ProcessedFiles;
+        private FileDictionary<NString, List<string>> processedFiles;
 
         private PhotoReorganizerOptions Options { get; set; }
 
@@ -21,14 +21,15 @@ namespace PhotoLibraryCleaner.Lib
         public PhotoReorganizer(PhotoReorganizerOptions options)
         {
             this.Options = options;
-            this.ProcessedFiles = [];
+            this.processedFiles = [];
             this.Errors = [];
-            if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.ProcessedDirectoryName))
-                && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
-            {
-                string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
-                this.ProcessedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
-            }
+
+            // if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.ProcessedDirectoryName))
+            //     && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
+            // {
+            //     string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
+            //     this.ProcessedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+            // }
         }
 
         public JobReturn OrganizePhotos()
@@ -36,20 +37,38 @@ namespace PhotoLibraryCleaner.Lib
             Log.Enter(nameof(this.OrganizePhotos));
             try
             {
-                JobReturn jobReturn = new();
-                this.ProcessDirectory(this.Options.RootDirectoryInfo);
-                jobReturn.Success = this.Errors.Count == 0;
-                jobReturn.Error = new AggregateException(this.Errors);
-                string jsArchive = JsonSerializer.Serialize(this.ProcessedFiles);
-                File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
+                var jobReturn = new JobReturn();
+                var everything = Directory.GetFiles(this.Options.RootDirectoryInfo.FullName, "*.*", SearchOption.AllDirectories).ToList();
+                foreach (var currentPath in everything)
+                {
+                    string destPath = currentPath.Replace(this.Options.RootDirectoryInfo.FullName, Statics.GetOriginalDirectory().FullName);
+                    try
+                    {
+                        _ = Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                        File.Copy(currentPath, destPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Errors.Add(ex);
+                        this.ProcessErrorFile(currentPath);
+                    }
+                }
+
+                this.ProcessDirectory(Statics.GetOriginalDirectory());
+                jobReturn.Success = true;
+                jobReturn.HandledError = new AggregateException(this.Errors);
+                string jsArchive = JsonSerializer.Serialize(this.processedFiles);
+                // File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
                 return jobReturn;
             }
             catch (Exception ex)
             {
                 Log.Error("Error", ex);
+                this.Errors.Add(ex);
+                AggregateException exx = new AggregateException(this.Errors);
                 return new JobReturn()
                 {
-                    Error = ex,
+                    HandledError = exx,
                     Success = false,
                 };
             }
@@ -61,13 +80,14 @@ namespace PhotoLibraryCleaner.Lib
 
         private void ProcessDirectory(DirectoryInfo directory)
         {
+            // TODO WHAT IF THERE IS A DIRECTORY CALLED PROCESSED ALREADY
             var childDirectories = directory.EnumerateDirectories().ToList();
             var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
 
             // Extract all Zip files first so we can process their child directories
-            foreach (var cf in childFiles.Where(c => c.IsZip()))
+            foreach (var cf in childFiles.Where(c => c.EndsWith(Constants.FileExtensions.Zip)))
             {
-                this.ProcessZip(cf);
+                Statics.UnZip(cf);
             }
 
             // process all child directories
@@ -77,7 +97,7 @@ namespace PhotoLibraryCleaner.Lib
             }
 
             // process all NOT-zip files
-            foreach (var cf in childFiles.Where(c => !c.IsZip()))
+            foreach (var cf in childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip)))
             {
                 try
                 {
@@ -86,6 +106,7 @@ namespace PhotoLibraryCleaner.Lib
                 catch (Exception ex)
                 {
                     this.Errors.Add(ex);
+                    this.ProcessErrorFile(cf);
                 }
             }
         }
@@ -95,60 +116,133 @@ namespace PhotoLibraryCleaner.Lib
             string fileSHAchksum = string.Empty;
 
             // get file checksum
-            using (var sha = System.Security.Cryptography.SHA256.Create())
-            {
-                using (var stream = File.OpenRead(filePath))
-                {
-                    var hash = sha.ComputeHash(stream);
-                    fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
-                }
-            }
+            // using (var sha = System.Security.Cryptography.SHA256.Create())
+            // {
+            //     using (var stream = File.OpenRead(filePath))
+            //     {
+            //         var hash = sha.ComputeHash(stream);
+            //         fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
+            //     }
+            // }
 
             // check if our dictionary already has that checksum
-            if (this.ProcessedFiles.TryGetValue(fileSHAchksum, out _))
-            {
-                if (this.Options.DeleteDuplicates)
-                {
-                    File.Delete(filePath);
-                    return;
-                }
-            }
-            else
-            {
-                this.ProcessedFiles[fileSHAchksum] = new List<string>();
-            }
+            // if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
+            // {
+            //     if (this.Options.DeleteDuplicates)
+            //     {
+            //         File.Delete(filePath);
+            //         return;
+            //     }
+            // }
+            // else
+            // {
+            //     this.processedFiles[fileSHAchksum] = new List<string>();
+            // }
 
-            if (filePath.IsPhoto())
+            if (filePath.IsZip())
+            {
+                Statics.UnZip(filePath);
+            }
+            else if (filePath.IsPhoto())
             {
                 this.ProcessPhoto(filePath);
             }
-            else if (filePath.IsZip())
+            else if (filePath.IsVideo())
             {
-                this.ProcessZip(filePath);
+                this.ProcessVideo(filePath);
             }
+            // else if (filePath.IsMusic())
+            // {
+            //     this.ProcessMusic(filePath);
+            // }
             else
             {
                 this.ProcessMiscFile(filePath);
             }
 
-            this.ProcessedFiles[fileSHAchksum].Add(filePath);
+            this.processedFiles[fileSHAchksum].Add(filePath);
         }
 
-        private string ProcessPhoto(string filePath)
+        public string ProcessErrorFile(string filePath)
+        {
+            DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
+            if (filePath.IsPhoto())
+            {
+                errorDir = Statics.GetErrorPhotoDirectory();
+            }
+            else if (filePath.IsVideo())
+            {
+                errorDir = Statics.GetErrorVideoDirectory();
+            }
+
+            string destFileName = Path.Combine(errorDir.FullName, Path.GetFileName(filePath));
+            if (File.Exists(destFileName))
+            {
+                int existing = 0;
+                do
+                {
+                    existing++;
+                    destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
+                }
+                while (File.Exists(destFileName));
+            }
+
+            File.Copy(filePath, destFileName);
+            return destFileName;
+        }
+
+        public FileInfo ProcessPhoto(string filePath)
+        {
+            // capture our filepath as a TagLib Image
+            TagLib.File file = TagLib.File.Create(filePath);
+            DateTime photoDt;
+            // attempt to get photo datetime from metadata
+            if (file is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
+            {
+                photoDt = image.ImageTag.DateTime.Value;
+            }
+            else if ((file.Tag.DateTagged ?? default) != default)
+            {
+                photoDt = file.Tag.DateTagged.Value;
+            }
+            else
+            {
+                FileInfo fi = new FileInfo(filePath);
+                photoDt = fi.CreationTime;
+            }
+
+            // get datetime directory
+            var destinationDirectory = Statics.GetPhotoDirectoryFromDateTime(photoDt);
+            string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
+
+            // check for duplicates, rename file if they exist
+            if (File.Exists(destinationFilePath))
+            {
+                int existing = 0;
+                do
+                {
+                    existing++;
+                    destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                }
+                while (File.Exists(destinationFilePath));
+            }
+
+            // copy file to new destination
+            File.Copy(filePath, destinationFilePath);
+            return new FileInfo(destinationFilePath);
+        }
+
+        public FileInfo ProcessVideo(string filePath)
         {
             // capture our filepath as a TagLib Image
             TagLib.File file = TagLib.File.Create(filePath);
 
             // attempt to get photo datetime from metadata
-            if (file is TagLib.Image.File image && image?.ImageTag?.DateTime is DateTime dtt && dtt != default)
+            if (file is not null && file.Tag.DateTagged is DateTime dtt && dtt != default)
             {
-                // attempt to pull photo metadata - the date the photo was taken
-                DateTime photoDt = image.ImageTag.DateTime.Value;
-
                 // get datetime directory
-                string destinationDirectory = this.GetDirectoryFromDateTime(photoDt);
-                Directory.CreateDirectory(destinationDirectory);
-                string destinationFilePath = Path.Combine(destinationDirectory, Path.GetFileName(filePath));
+                var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(dtt);
+                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
 
                 // check for duplicates, rename file if they exist
                 if (File.Exists(destinationFilePath))
@@ -164,52 +258,30 @@ namespace PhotoLibraryCleaner.Lib
 
                 // copy file to new destination
                 File.Copy(filePath, destinationFilePath);
-                return destinationDirectory;
+                return new FileInfo(destinationFilePath);
             }
 
             // resort to the actual file creation date
             return this.ProcessMiscFile(filePath);
         }
 
-        private void ProcessZip(string filePath)
-        {
-            string dname = Path.GetDirectoryName(filePath) ?? filePath.Replace(Path.GetFileNameWithoutExtension(filePath), string.Empty);
-            string newDname = Path.Combine(dname, Path.GetFileNameWithoutExtension(filePath));
-            System.IO.Directory.CreateDirectory(newDname);
-            ZipFile.ExtractToDirectory(filePath, dname);
-        }
-
-        private string ProcessMiscFile(string filePath)
+        public FileInfo ProcessMiscFile(string filePath)
         {
             FileInfo file1 = new FileInfo(filePath);
-            string destinationDirectory = this.GetDirectoryFromDateTime(file1.CreationTime);
-            Directory.CreateDirectory(destinationDirectory);
-            string destFileName = Path.Combine(destinationDirectory, Path.GetFileName(filePath));
+            var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file1.CreationTime);
+            string destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
             if (File.Exists(destFileName))
             {
-                destFileName = Path.Combine(destinationDirectory, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
+                destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
             }
 
             File.Copy(filePath, destFileName);
-            return destinationDirectory;
+            return new FileInfo(destFileName);
         }
 
-        private string GetDirectoryFromDateTime(DateTime? dt)
-        {
-            if (!dt.HasValue)
-            {
-                return Constants.ProcessedDirectoryName;
-            }
-            else
-            {
-                DateTime fileDt = dt.Value;
-                return Path.Combine(
-                    this.Options.RootDirectoryInfo.FullName,
-                    Constants.ProcessedDirectoryName,
-                    fileDt.Year.ToString("0000"),
-                    fileDt.Month.ToString("00"),
-                    fileDt.Day.ToString("00"));
-            }
-        }
+        // public FileInfo ProcessMusicFile(string filePath)
+        // {
+
+        // }
     }
 }

@@ -8,7 +8,7 @@ namespace PhotoLibraryCleaner.Lib
     {
         public bool Success { get; set; }
 
-        public Exception? Error { get; set; }
+        public AggregateException HandledError { get; set; }
 
         public static implicit operator bool(JobReturn resultBool) => resultBool.Success;
     }
