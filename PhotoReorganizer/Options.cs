@@ -2,8 +2,6 @@
 // Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
-using Serilog;
-
 namespace PhotoLibraryCleaner.Lib
 {
     public record PhotoReorganizerOptions(DirectoryInfo rootDirectoryInfo, bool isReadOnly = false, bool deleteDuplicates = false)

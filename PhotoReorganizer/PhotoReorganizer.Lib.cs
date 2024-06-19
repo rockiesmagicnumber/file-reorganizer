@@ -31,7 +31,7 @@ namespace PhotoLibraryCleaner.Lib
 
         public JobReturn OrganizePhotos()
         {
-            Log.Information(string.Format("Enter - {0}", nameof(this.OrganizePhotos)));
+            StaticLog.Enter(nameof(this.OrganizePhotos));
             try
             {
                 var jobReturn = new JobReturn();
@@ -71,214 +71,262 @@ namespace PhotoLibraryCleaner.Lib
             }
             finally
             {
-                Log.Information(string.Format("Exit - {0}", nameof(this.OrganizePhotos)));
+                StaticLog.Exit(nameof(this.OrganizePhotos));
             }
         }
 
         private void ProcessDirectory(DirectoryInfo directory)
         {
-            // TODO WHAT IF THERE IS A DIRECTORY CALLED PROCESSED ALREADY
-            var childDirectories = directory.EnumerateDirectories().ToList();
-            var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
-
-            // Extract all Zip files first so we can process their child directories
-            foreach (var cf in childFiles.Where(c => c.EndsWith(Constants.FileExtensions.Zip)))
+            StaticLog.Enter(nameof(this.ProcessDirectory));
+            try
             {
-                Statics.UnZip(cf);
-            }
+                // TODO WHAT IF THERE IS A DIRECTORY CALLED PROCESSED ALREADY
+                var childDirectories = directory.EnumerateDirectories().ToList();
+                var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
 
-            // process all child directories
-            foreach (var child in childDirectories)
-            {
-                this.ProcessDirectory(child);
-            }
-
-            // process all NOT-zip files
-            foreach (var cf in childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip)))
-            {
-                try
+                // Extract all Zip files first so we can process their child directories
+                foreach (var cf in childFiles.Where(c => c.EndsWith(Constants.FileExtensions.Zip)))
                 {
-                    this.ProcessFile(cf);
+                    Statics.UnZip(cf);
                 }
-                catch (Exception ex)
+
+                // process all child directories
+                foreach (var child in childDirectories)
                 {
-                    this.Errors.Add(ex);
-                    this.ProcessErrorFile(cf);
+                    this.ProcessDirectory(child);
                 }
+
+                // process all NOT-zip files
+                foreach (var cf in childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip)))
+                {
+                    try
+                    {
+                        this.ProcessFile(cf);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Errors.Add(ex);
+                        this.ProcessErrorFile(cf);
+                    }
+                }
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessDirectory));
             }
         }
 
         private void ProcessFile(string filePath)
         {
-            string fileSHAchksum = string.Empty;
+            StaticLog.Enter(nameof(this.ProcessFile));
+            try
+            {
+                string fileSHAchksum = string.Empty;
 
-            // get file checksum
-            // using (var sha = System.Security.Cryptography.SHA256.Create())
-            // {
-            //     using (var stream = File.OpenRead(filePath))
-            //     {
-            //         var hash = sha.ComputeHash(stream);
-            //         fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
-            //     }
-            // }
+                // get file checksum
+                // using (var sha = System.Security.Cryptography.SHA256.Create())
+                // {
+                //     using (var stream = File.OpenRead(filePath))
+                //     {
+                //         var hash = sha.ComputeHash(stream);
+                //         fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
+                //     }
+                // }
 
-            // check if our dictionary already has that checksum
-            // if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
-            // {
-            //     if (this.Options.DeleteDuplicates)
-            //     {
-            //         File.Delete(filePath);
-            //         return;
-            //     }
-            // }
-            // else
-            // {
-            //     this.processedFiles[fileSHAchksum] = new List<string>();
-            // }
+                // check if our dictionary already has that checksum
+                // if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
+                // {
+                //     if (this.Options.DeleteDuplicates)
+                //     {
+                //         File.Delete(filePath);
+                //         return;
+                //     }
+                // }
+                // else
+                // {
+                //     this.processedFiles[fileSHAchksum] = new List<string>();
+                // }
 
-            if (filePath.IsZip())
-            {
-                Statics.UnZip(filePath);
-            }
-            else if (filePath.IsPhoto())
-            {
-                this.ProcessPhoto(filePath);
-            }
-            else if (filePath.IsVideo())
-            {
-                this.ProcessVideo(filePath);
-            }
-            else if (filePath.IsMusic())
-            {
-            //     this.ProcessMusic(filePath);
-             }
-            else
-            {
-                this.ProcessMiscFile(filePath);
-            }
+                if (filePath.IsZip())
+                {
+                    Statics.UnZip(filePath);
+                }
+                else if (filePath.IsPhoto())
+                {
+                    this.ProcessPhoto(filePath);
+                }
+                else if (filePath.IsVideo())
+                {
+                    this.ProcessVideo(filePath);
+                }
+                else if (filePath.IsMusic())
+                {
+                    //     this.ProcessMusic(filePath);
+                }
+                else
+                {
+                    this.ProcessMiscFile(filePath);
+                }
 
-            this.processedFiles[fileSHAchksum].Add(filePath);
+                this.processedFiles[fileSHAchksum].Add(filePath);
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessFile));
+            }
         }
 
         public string ProcessErrorFile(string filePath)
         {
-            DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
-            if (filePath.IsPhoto())
+            StaticLog.Enter(nameof(this.ProcessFile));
+            try
             {
-                errorDir = Statics.GetErrorPhotoDirectory();
-            }
-            else if (filePath.IsVideo())
-            {
-                errorDir = Statics.GetErrorVideoDirectory();
-            }
-
-            string destFileName = Path.Combine(errorDir.FullName, Path.GetFileName(filePath));
-            if (File.Exists(destFileName))
-            {
-                int existing = 0;
-                do
+                DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
+                if (filePath.IsPhoto())
                 {
-                    existing++;
-                    destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
+                    errorDir = Statics.GetErrorPhotoDirectory();
                 }
-                while (File.Exists(destFileName));
-            }
+                else if (filePath.IsVideo())
+                {
+                    errorDir = Statics.GetErrorVideoDirectory();
+                }
 
-            File.Copy(filePath, destFileName);
-            return destFileName;
+                string destFileName = Path.Combine(errorDir.FullName, Path.GetFileName(filePath));
+                if (File.Exists(destFileName))
+                {
+                    int existing = 0;
+                    do
+                    {
+                        existing++;
+                        destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
+                    }
+                    while (File.Exists(destFileName));
+                }
+
+                File.Copy(filePath, destFileName);
+                return destFileName;
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessFile));
+            }
         }
 
         public FileInfo ProcessPhoto(string filePath)
         {
-            // capture our filepath as a TagLib Image
-            TagLib.File file = TagLib.File.Create(filePath);
-            DateTime photoDt;
-            // attempt to get photo datetime from metadata
-            if (file is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
+            StaticLog.Enter(nameof(this.ProcessFile));
+            try
             {
-                photoDt = image.ImageTag.DateTime.Value;
-            }
-            else if ((file.Tag.DateTagged ?? default) != default)
-            {
-                photoDt = file.Tag.DateTagged.Value;
-            }
-            else
-            {
-                FileInfo fi = new FileInfo(filePath);
-                photoDt = fi.CreationTime;
-            }
-
-            // get datetime directory
-            var destinationDirectory = Statics.GetPhotoDirectoryFromDateTime(photoDt);
-            string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-
-            // check for duplicates, rename file if they exist
-            if (File.Exists(destinationFilePath))
-            {
-                int existing = 0;
-                do
+                // capture our filepath as a TagLib Image
+                TagLib.File file = TagLib.File.Create(filePath);
+                DateTime photoDt;
+                // attempt to get photo datetime from metadata
+                if (file is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
                 {
-                    existing++;
-                    destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                    photoDt = image.ImageTag.DateTime.Value;
                 }
-                while (File.Exists(destinationFilePath));
-            }
+                else if ((file.Tag.DateTagged ?? default) != default)
+                {
+                    photoDt = file.Tag.DateTagged.Value;
+                }
+                else
+                {
+                    FileInfo fi = new FileInfo(filePath);
+                    photoDt = fi.CreationTime;
+                }
 
-            // copy file to new destination
-            File.Copy(filePath, destinationFilePath);
-            return new FileInfo(destinationFilePath);
+                // get datetime directory
+                var destinationDirectory = Statics.GetPhotoDirectoryFromDateTime(photoDt);
+                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
+
+                // check for duplicates, rename file if they exist
+                if (File.Exists(destinationFilePath))
+                {
+                    int existing = 0;
+                    do
+                    {
+                        existing++;
+                        destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                    }
+                    while (File.Exists(destinationFilePath));
+                }
+
+                // copy file to new destination
+                File.Copy(filePath, destinationFilePath);
+                return new FileInfo(destinationFilePath);
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessFile));
+            }
         }
 
         public FileInfo ProcessVideo(string filePath)
         {
-            // capture our filepath as a TagLib Image
-            TagLib.File file = TagLib.File.Create(filePath);
-
-            // attempt to get photo datetime from metadata
-            DateTime videoDt;
-            if (file is not null && (file.Tag?.DateTagged ?? default) != default)
+            StaticLog.Enter(nameof(this.ProcessFile));
+            try
             {
-                videoDt = file.Tag.DateTagged.Value;
-            }
-            else
-            {
-                FileInfo fi = new FileInfo(filePath);
-                videoDt = fi.CreationTime;
-            }
+                // capture our filepath as a TagLib Image
+                TagLib.File file = TagLib.File.Create(filePath);
 
-            // get datetime directory
-            var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt);
-            string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-
-            // check for duplicates, rename file if they exist
-            if (File.Exists(destinationFilePath))
-            {
-                int existing = 0;
-                do
+                // attempt to get photo datetime from metadata
+                DateTime videoDt;
+                if (file is not null && (file.Tag?.DateTagged ?? default) != default)
                 {
-                    existing++;
-                    destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                    videoDt = file.Tag.DateTagged.Value;
                 }
-                while (File.Exists(destinationFilePath));
-            }
+                else
+                {
+                    FileInfo fi = new FileInfo(filePath);
+                    videoDt = fi.CreationTime;
+                }
 
-            // copy file to new destination
-            File.Copy(filePath, destinationFilePath);
-            return new FileInfo(destinationFilePath);
+                // get datetime directory
+                var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt);
+                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
+
+                // check for duplicates, rename file if they exist
+                if (File.Exists(destinationFilePath))
+                {
+                    int existing = 0;
+                    do
+                    {
+                        existing++;
+                        destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                    }
+                    while (File.Exists(destinationFilePath));
+                }
+
+                // copy file to new destination
+                File.Copy(filePath, destinationFilePath);
+                return new FileInfo(destinationFilePath);
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessFile));
+            }
         }
 
         public FileInfo ProcessMiscFile(string filePath)
         {
-            FileInfo file1 = new FileInfo(filePath);
-            var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file1.CreationTime);
-            string destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-            if (File.Exists(destFileName))
+            StaticLog.Enter(nameof(this.ProcessFile));
+            try
             {
-                destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
-            }
+                FileInfo file1 = new FileInfo(filePath);
+                var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file1.CreationTime);
+                string destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
+                if (File.Exists(destFileName))
+                {
+                    destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
+                }
 
-            File.Copy(filePath, destFileName);
-            return new FileInfo(destFileName);
+                File.Copy(filePath, destFileName);
+                return new FileInfo(destFileName);
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.ProcessFile));
+            }
         }
 
         // public FileInfo ProcessMusicFile(string filePath)

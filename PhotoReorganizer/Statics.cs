@@ -5,7 +5,6 @@
 using System.IO.Compression;
 using System.Reflection;
 using System.Security.Cryptography;
-using Serilog;
 
 namespace PhotoLibraryCleaner.Lib
 {
