@@ -148,10 +148,10 @@ namespace PhotoLibraryCleaner.Lib
             {
                 this.ProcessVideo(filePath);
             }
-            // else if (filePath.IsMusic())
-            // {
+            else if (filePath.IsMusic())
+            {
             //     this.ProcessMusic(filePath);
-            // }
+             }
             else
             {
                 this.ProcessMiscFile(filePath);
@@ -235,31 +235,36 @@ namespace PhotoLibraryCleaner.Lib
             TagLib.File file = TagLib.File.Create(filePath);
 
             // attempt to get photo datetime from metadata
-            if (file is not null && file.Tag.DateTagged is DateTime dtt && dtt != default)
+            DateTime videoDt;
+            if (file is not null && (file.Tag?.DateTagged ?? default) != default)
             {
-                // get datetime directory
-                var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(dtt);
-                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-
-                // check for duplicates, rename file if they exist
-                if (File.Exists(destinationFilePath))
-                {
-                    int existing = 0;
-                    do
-                    {
-                        existing++;
-                        destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
-                    }
-                    while (File.Exists(destinationFilePath));
-                }
-
-                // copy file to new destination
-                File.Copy(filePath, destinationFilePath);
-                return new FileInfo(destinationFilePath);
+                videoDt = file.Tag.DateTagged.Value;
+            }
+            else
+            {
+                FileInfo fi = new FileInfo(filePath);
+                videoDt = fi.CreationTime;
             }
 
-            // resort to the actual file creation date
-            return this.ProcessMiscFile(filePath);
+            // get datetime directory
+            var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt);
+            string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
+
+            // check for duplicates, rename file if they exist
+            if (File.Exists(destinationFilePath))
+            {
+                int existing = 0;
+                do
+                {
+                    existing++;
+                    destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
+                }
+                while (File.Exists(destinationFilePath));
+            }
+
+            // copy file to new destination
+            File.Copy(filePath, destinationFilePath);
+            return new FileInfo(destinationFilePath);
         }
 
         public FileInfo ProcessMiscFile(string filePath)

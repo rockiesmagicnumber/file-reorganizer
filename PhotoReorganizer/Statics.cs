@@ -13,6 +13,7 @@ namespace PhotoLibraryCleaner.Lib
     {
         public static IList<string> PhotoExtensions = GetPhotoFileExtensions();
         public static IList<string> VideoExtensions = GetVideoFileExtensions();
+        public static IList<string> MusicExtensions = GetMusicFileExtensions();
 
         public static DirectoryInfo GetDirectoryFromDateTime(DateTime? dt)
         {
@@ -226,8 +227,17 @@ namespace PhotoLibraryCleaner.Lib
             // Get the file extension in lowercase for case-insensitive comparison
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
 
-            // Check against a list of common .zips - we're not gonna bother with gzip or whatever right now
-            return extension.EndsWith(Constants.FileExtensions.Zip);
+            // Check against a list of common video file extensions
+            return VideoExtensions.Contains(extension);
+        }
+
+        public static bool IsMusic(this string filePath)
+        {
+            // Get the file extension in lowercase for case-insensitive comparison
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            // Check against a list of common video file extensions
+            return MusicExtensions.Contains(extension);
         }
 
         private static string GetChecksum(string file)
@@ -256,6 +266,20 @@ namespace PhotoLibraryCleaner.Lib
         {
             List<string> ret = new List<string>();
             foreach (FieldInfo field in typeof(Constants.FileExtensions.Video).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (field.FieldType == typeof(string))
+                {
+                    ret.Add(field.GetValue(null).ToString());
+                }
+            }
+
+            return ret;
+        }
+
+        public static IList<string> GetMusicFileExtensions()
+        {
+            List<string> ret = new List<string>();
+            foreach (FieldInfo field in typeof(Constants.FileExtensions.Music).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 if (field.FieldType == typeof(string))
                 {

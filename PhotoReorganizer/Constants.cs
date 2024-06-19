@@ -93,6 +93,53 @@ namespace PhotoLibraryCleaner.Lib
                 public const string WMV = ".wmv";
                 public const string YUV = ".yuv";
             }
+
+            public static class Music
+            {
+                public const string AA = ".aa";
+                public const string AAC = ".aac";
+                public const string AAX = ".aax";
+                public const string ACT = ".act";
+                public const string AIFF = ".aiff";
+                public const string ALAC = ".alac";
+                public const string AMR = ".amr";
+                public const string APE = ".ape";
+                public const string AU = ".au";
+                public const string AWB = ".awb";
+                public const string CDA = ".cda";
+                public const string DSS = ".dss";
+                public const string DVF = ".dvf";
+                public const string EightSVX = ".8svx";
+                public const string FLAC = ".flac";
+                public const string GSM = ".gsm";
+                public const string IKLAX = ".iklax";
+                public const string IVS = ".ivs";
+                public const string M4A = ".m4a";
+                public const string M4B = ".m4b";
+                public const string M4P = ".m4p";
+                public const string MMF = ".mmf";
+                public const string MOGG = ".mogg";
+                public const string MOVPKG = ".movpkg";
+                public const string MP3 = ".mp3";
+                public const string MPC = ".mpc";
+                public const string MSV = ".msv";
+                public const string NMF = ".nmf ";
+                public const string OGA = ".oga";
+                public const string OGG = ".ogg";
+                public const string OPUS = ".opus";
+                public const string RA = ".ra";
+                public const string RAW = ".raw";
+                public const string RF64 = ".rf64";
+                public const string RM = ".rm";
+                public const string SLN = ".sln";
+                public const string TTA = ".tta";
+                public const string VOC = ".voc";
+                public const string VOX = ".vox";
+                public const string WAV = ".wav";
+                public const string WEBM = ".webm";
+                public const string WMA = ".wma";
+                public const string WV = ".wv";
+            }
         }
     }
 }
