@@ -4,14 +4,11 @@
 
 namespace PhotoLibraryCleaner.Lib
 {
-    using System.Reflection.Metadata;
-    using System.Security.Cryptography;
     using System.Text.Json;
-    using log4net;
+    using Serilog;
 
     public class PhotoReorganizer
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(PhotoReorganizer));
         private FileDictionary<NString, List<string>> processedFiles;
 
         private PhotoReorganizerOptions Options { get; set; }
@@ -24,7 +21,7 @@ namespace PhotoLibraryCleaner.Lib
             this.processedFiles = [];
             this.Errors = [];
 
-            // if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.ProcessedDirectoryName))
+            // if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.RuntimeDirectories.ProcessedDirectoryName))
             //     && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
             // {
             //     string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
@@ -34,7 +31,7 @@ namespace PhotoLibraryCleaner.Lib
 
         public JobReturn OrganizePhotos()
         {
-            Log.Enter(nameof(this.OrganizePhotos));
+            Log.Information(string.Format("Enter - {0}", nameof(this.OrganizePhotos)));
             try
             {
                 var jobReturn = new JobReturn();
@@ -74,7 +71,7 @@ namespace PhotoLibraryCleaner.Lib
             }
             finally
             {
-                Log.Exit(nameof(this.OrganizePhotos));
+                Log.Information(string.Format("Exit - {0}", nameof(this.OrganizePhotos)));
             }
         }
 

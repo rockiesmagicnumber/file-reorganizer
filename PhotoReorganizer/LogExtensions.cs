@@ -2,16 +2,18 @@
 // Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
-using log4net;
-public static class LogExtensions
+namespace Serilog
 {
-    public static void Enter(this ILog log, string methodName)
+    public static class LogExtensions
     {
-        log.DebugFormat("Entering method {0}", methodName);
-    }
+        public static void Enter(this ILogger log, string methodName)
+        {
+            log.Debug("Entering method {0}", methodName);
+        }
 
-    public static void Exit(this ILog log, string methodName)
-    {
-        log.DebugFormat("Exiting method {0}", methodName);
+        public static void Exit(this ILogger log, string methodName)
+        {
+            log.Debug("Exiting method {0}", methodName);
+        }
     }
 }

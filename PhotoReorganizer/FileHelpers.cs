@@ -4,8 +4,6 @@
 
 namespace PhotoLibraryCleaner.Lib
 {
-    using System.Security.Cryptography;
-
     public static class FileHelpers
     {
 

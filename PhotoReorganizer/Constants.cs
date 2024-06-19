@@ -6,11 +6,21 @@ namespace PhotoLibraryCleaner.Lib
 {
     public static class Constants
     {
-        public const string ErrorDirectoryName = "Errors";
-        public const string LogDirectoryName = "Logs";
-        public const string OriginalDirectoryName = "Original";
-        public const string ProcessedDirectoryName = "Processed";
-        public const string SokkaCorpDirectoryName = "SokkaCorp";
+        public static class RuntimeFiles
+        {
+            private const string LogDateTimeFormat = "yyyy-MM-ddThh-mm-ss.ffff";
+
+            public static string LogFileName => $"SokkaCorp-{DateTime.Now.ToString(LogDateTimeFormat)}";
+        }
+
+        public static class RuntimeDirectories
+        {
+            public const string ErrorDirectoryName = "Errors";
+            public const string LogDirectoryName = "Logs";
+            public const string OriginalDirectoryName = "Original";
+            public const string ProcessedDirectoryName = "Processed";
+            public const string SokkaCorpDirectoryName = "SokkaCorp";
+        }
 
         public static class FolderCategories
         {

@@ -5,6 +5,7 @@
 using System.IO.Compression;
 using System.Reflection;
 using System.Security.Cryptography;
+using Serilog;
 
 namespace PhotoLibraryCleaner.Lib
 {
@@ -89,7 +90,20 @@ namespace PhotoLibraryCleaner.Lib
         {
             var ret = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Constants.SokkaCorpDirectoryName);
+                Constants.RuntimeDirectories.SokkaCorpDirectoryName);
+            return Directory.CreateDirectory(ret);
+        }
+
+        public static string GetLogFilePath()
+        {
+            return Path.Combine(GetLogsDirectory().FullName, Constants.RuntimeFiles.LogFileName);
+        }
+
+        public static DirectoryInfo GetLogsDirectory()
+        {
+            var ret = Path.Combine(
+                GetSokkaCorpDirectory().FullName,
+                Constants.RuntimeDirectories.LogDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 
@@ -97,7 +111,7 @@ namespace PhotoLibraryCleaner.Lib
         {
             var ret = Path.Combine(
                 GetSokkaCorpDirectory().FullName,
-                Constants.ErrorDirectoryName);
+                Constants.RuntimeDirectories.ErrorDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 
@@ -105,7 +119,7 @@ namespace PhotoLibraryCleaner.Lib
         {
             var ret = Path.Combine(
                 GetSokkaCorpDirectory().FullName,
-                Constants.OriginalDirectoryName);
+                Constants.RuntimeDirectories.OriginalDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 
@@ -113,7 +127,7 @@ namespace PhotoLibraryCleaner.Lib
         {
             var ret = Path.Combine(
                 GetSokkaCorpDirectory().FullName,
-                Constants.ProcessedDirectoryName);
+                Constants.RuntimeDirectories.ProcessedDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 
