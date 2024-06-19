@@ -1,8 +1,8 @@
-// <copyright file="Constants.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="Constants.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public static class Constants
     {

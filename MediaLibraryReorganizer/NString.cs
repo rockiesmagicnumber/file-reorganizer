@@ -1,8 +1,8 @@
-// <copyright file="NString.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="NString.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     /// <summary>
     /// This struct is needed because we are taking checksums and using them as keys in an IDictionary

@@ -1,12 +1,12 @@
-// <copyright file="Constants.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="Statics.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
 using System.IO.Compression;
 using System.Reflection;
 using System.Security.Cryptography;
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public static class Statics
     {

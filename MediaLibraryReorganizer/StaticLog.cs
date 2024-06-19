@@ -1,8 +1,8 @@
-// <copyright file="StaticLog.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="StaticLog.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     using Serilog;
 

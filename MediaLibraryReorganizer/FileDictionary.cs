@@ -1,8 +1,8 @@
-// <copyright file="FileDictionary.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="FileDictionary.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     using System.Collections;
     using System.Diagnostics.CodeAnalysis;

@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/PhotoReorganizer.sln",
+                "${workspaceFolder}/MediaLibraryOrganizer.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/PhotoReorganizer.sln",
+                "${workspaceFolder}/MediaLibraryOrganizer.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/PhotoReorganizer.sln"
+                "${workspaceFolder}/MediaLibraryOrganizer.sln"
             ],
             "problemMatcher": "$msCompile"
         }

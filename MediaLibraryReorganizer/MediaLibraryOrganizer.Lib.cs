@@ -1,21 +1,21 @@
-// <copyright file="PhotoReorganizer.Lib.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+// <copyright file="MediaLibraryOrganizer.Lib.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner.Lib
+namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     using System.Text.Json;
     using Serilog;
 
-    public class PhotoReorganizer
+    public class MediaLibraryOrganizer
     {
         private FileDictionary<NString, List<string>> processedFiles;
 
-        private PhotoReorganizerOptions Options { get; set; }
+        private MediaLibraryOrganizerOptions Options { get; set; }
 
         private List<Exception> Errors { get; set; }
 
-        public PhotoReorganizer(PhotoReorganizerOptions options)
+        public MediaLibraryOrganizer(MediaLibraryOrganizerOptions options)
         {
             this.Options = options;
             this.processedFiles = [];

@@ -1,11 +1,11 @@
-﻿// <copyright file="Program.cs" company="SokkaCorp">
-// Copyright (c) SokkaCorp. All rights reserved.
+﻿// <copyright file="Program.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace PhotoLibraryCleaner
+namespace SokkaCorp.MediaLibraryOrganizer
 {
     using System.IO;
-    using PhotoLibraryCleaner.Lib;
+    using SokkaCorp.MediaLibraryOrganizer.Lib;
     using Serilog;
 
     public class Program
@@ -42,8 +42,8 @@ namespace PhotoLibraryCleaner
 
             bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
             bool deleteDupes = false; // args.Contains("--delete-duplicates");
-            PhotoReorganizerOptions executionOptions = new PhotoReorganizerOptions(executionDirectory, readOnly, deleteDupes);
-            PhotoReorganizer pr = new PhotoReorganizer(executionOptions);
+            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(executionDirectory, readOnly, deleteDupes);
+            MediaLibraryOrganizer pr = new MediaLibraryOrganizer(executionOptions);
             JobReturn success = pr.OrganizePhotos();
             Log.Information("Success: " + success.Success.ToString());
             Log.Information("\tHandled File Errors: " + success.HandledError.InnerExceptions.Count.ToString());
