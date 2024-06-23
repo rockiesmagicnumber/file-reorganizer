@@ -14,7 +14,8 @@ namespace SokkaCorp.MediaLibraryOrganizer
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .WriteTo.File(
+                .WriteTo
+                .File(
                     Statics.GetLogFilePath(),
                     rollingInterval: RollingInterval.Infinite,
                     outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")

@@ -36,8 +36,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             {
                 var jobReturn = new JobReturn();
                 var everything = Directory.GetFiles(this.Options.RootDirectoryInfo.FullName, "*.*", SearchOption.AllDirectories).ToList();
-                foreach (var currentPath in everything)
+                int cnt = 0;
+                foreach (var currentPath in everything.Skip(14868))
                 {
+                    cnt++;
+                    Console.WriteLine($"Processing {cnt}/{everything.Count - 14868}: {currentPath}");
                     string destPath = currentPath.Replace(this.Options.RootDirectoryInfo.FullName, Statics.GetOriginalDirectory().FullName);
                     try
                     {
@@ -198,7 +201,14 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                     do
                     {
                         existing++;
-                        destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
+                        try
+                        {
+                            destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
+                        }
+                        catch (Exception ex)
+                        {
+                            return string.Empty;
+                        }
                     }
                     while (File.Exists(destFileName));
                 }
