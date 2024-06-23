@@ -1,5 +1,5 @@
-﻿// <copyright file="Program.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+﻿// <copyright file="Program.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 namespace SokkaCorp.MediaLibraryOrganizer
@@ -7,6 +7,7 @@ namespace SokkaCorp.MediaLibraryOrganizer
     using System.IO;
     using SokkaCorp.MediaLibraryOrganizer.Lib;
     using Serilog;
+    using System.Reflection;
 
     public class Program
     {
@@ -19,35 +20,36 @@ namespace SokkaCorp.MediaLibraryOrganizer
                     Statics.GetLogFilePath(),
                     rollingInterval: RollingInterval.Infinite,
                     outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
+                .WriteTo
+                    .Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
                 .CreateLogger();
 
-            // get input argument of the execution directory
-            string executionDirectoryStr = args[0];
-            DirectoryInfo executionDirectory;
-
-            if (string.IsNullOrEmpty(executionDirectoryStr))
+            // get args
+            DirectoryInfo sourceDirectory = new DirectoryInfo(Assembly.GetEntryAssembly().Location);
+            DirectoryInfo outputDirectory = null;
+            if (args.Contains(Constants.ArgumentFlags.Source))
             {
-                executionDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-            }
-            else if (Directory.Exists(executionDirectoryStr))
-            {
-                executionDirectory = new DirectoryInfo(executionDirectoryStr);
-            }
-            else
-            {
-                Log.Error("Must specify an existing directory");
-                throw new ArgumentNullException("Must specify an existing directory", null as Exception);
+                int sourceIndex = Array.IndexOf(args, Constants.ArgumentFlags.Source);
+                sourceDirectory = Directory.CreateDirectory(args[sourceIndex + 1]);
             }
 
-            Log.Debug("Execution Directory: {executionDirectory}", executionDirectory);
+            if (args.Contains(Constants.ArgumentFlags.Output))
+            {
+                int outputIndex = Array.IndexOf(args, Constants.ArgumentFlags.Output);
+                outputDirectory = Directory.CreateDirectory(args[outputIndex + 1]);
+                Log.Information($"Output Directory: {outputDirectory}");
+            }
+
+            Log.Debug("Source Directory: {executionDirectory}", sourceDirectory.FullName);
 
             bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
             bool deleteDupes = false; // args.Contains("--delete-duplicates");
-            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(executionDirectory, readOnly, deleteDupes);
+            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(sourceDirectory, readOnly, deleteDupes, outputDirectory);
             MediaLibraryOrganizer pr = new MediaLibraryOrganizer(executionOptions);
             JobReturn success = pr.OrganizePhotos();
             Log.Information("Success: " + success.Success.ToString());
             Log.Information("\tHandled File Errors: " + success.HandledError.InnerExceptions.Count.ToString());
+            Log.CloseAndFlush();
         }
     }
 }

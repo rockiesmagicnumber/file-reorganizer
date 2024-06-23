@@ -1,5 +1,5 @@
-// <copyright file="Statics.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+// <copyright file="Statics.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 using System.IO.Compression;
@@ -13,6 +13,9 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public static IList<string> PhotoExtensions = GetPhotoFileExtensions();
         public static IList<string> VideoExtensions = GetVideoFileExtensions();
         public static IList<string> MusicExtensions = GetMusicFileExtensions();
+
+        public static DirectoryInfo SourceDirectory = null;
+        public static DirectoryInfo OutputDirectory = null;
 
         public static DirectoryInfo GetDirectoryFromDateTime(DateTime? dt)
         {
@@ -89,7 +92,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public static DirectoryInfo GetSokkaCorpDirectory()
         {
             var ret = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                OutputDirectory?.FullName ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Constants.RuntimeDirectories.SokkaCorpDirectoryName);
             return Directory.CreateDirectory(ret);
         }
@@ -112,14 +115,6 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             var ret = Path.Combine(
                 GetSokkaCorpDirectory().FullName,
                 Constants.RuntimeDirectories.ErrorDirectoryName);
-            return Directory.CreateDirectory(ret);
-        }
-
-        public static DirectoryInfo GetOriginalDirectory()
-        {
-            var ret = Path.Combine(
-                GetSokkaCorpDirectory().FullName,
-                Constants.RuntimeDirectories.OriginalDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 

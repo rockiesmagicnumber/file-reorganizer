@@ -1,5 +1,5 @@
-// <copyright file="MediaLibraryOrganizer.Lib.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+// <copyright file="MediaLibraryOrganizer.Lib.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
@@ -21,12 +21,12 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             this.processedFiles = [];
             this.Errors = [];
 
-            // if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.RuntimeDirectories.ProcessedDirectoryName))
-            //     && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
-            // {
-            //     string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
-            //     this.ProcessedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
-            // }
+            if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.RuntimeDirectories.ProcessedDirectoryName))
+                && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
+            {
+                string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
+                this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+            }
         }
 
         public JobReturn OrganizePhotos()
@@ -35,30 +35,37 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             try
             {
                 var jobReturn = new JobReturn();
-                var everything = Directory.GetFiles(this.Options.RootDirectoryInfo.FullName, "*.*", SearchOption.AllDirectories).ToList();
-                int cnt = 0;
-                foreach (var currentPath in everything.Skip(14868))
-                {
-                    cnt++;
-                    Console.WriteLine($"Processing {cnt}/{everything.Count - 14868}: {currentPath}");
-                    string destPath = currentPath.Replace(this.Options.RootDirectoryInfo.FullName, Statics.GetOriginalDirectory().FullName);
-                    try
-                    {
-                        _ = Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-                        File.Copy(currentPath, destPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Errors.Add(ex);
-                        this.ProcessErrorFile(currentPath);
-                    }
-                }
+                // var everything = Directory.GetFiles(this.Options.RootDirectoryInfo.FullName, "*.*", SearchOption.AllDirectories).ToList();
+                // int cnt = 0;
+                // foreach (var currentPath in everything)
+                // {
+                //     cnt++;
+                //     string destPath = currentPath.Replace(this.Options.RootDirectoryInfo.FullName, Statics.GetOriginalDirectory().FullName);
+                //     Log.Information($"Copying {cnt}/{everything.Count}: {currentPath} => {destPath}");
+                //     try
+                //     {
+                //         if (!File.Exists(destPath))
+                //         {
+                //             _ = Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                //             File.Copy(currentPath, destPath);
+                //         }
+                //         else
+                //         {
+                //             Log.Information("File exists, Skipping");
+                //         }
+                //     }
+                //     catch (Exception ex)
+                //     {
+                //         this.Errors.Add(ex);
+                //         this.ProcessErrorFile(currentPath);
+                //     }
+                // }
 
-                this.ProcessDirectory(Statics.GetOriginalDirectory());
+                this.ProcessDirectory(this.Options.RootDirectoryInfo);
                 jobReturn.Success = true;
                 jobReturn.HandledError = new AggregateException(this.Errors);
                 string jsArchive = JsonSerializer.Serialize(this.processedFiles);
-                // File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
+                File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
                 return jobReturn;
             }
             catch (Exception ex)
@@ -80,7 +87,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         private void ProcessDirectory(DirectoryInfo directory)
         {
-            StaticLog.Enter(nameof(this.ProcessDirectory));
+            StaticLog.Enter($"{nameof(this.ProcessDirectory)} - {directory.FullName}");
             try
             {
                 // TODO WHAT IF THERE IS A DIRECTORY CALLED PROCESSED ALREADY
@@ -100,14 +107,19 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 }
 
                 // process all NOT-zip files
-                foreach (var cf in childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip)))
+                IEnumerable<string> cfs = childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip));
+                int cnt = 0;
+                foreach (var cf in cfs)
                 {
+                    cnt++;
                     try
                     {
+                        Log.Information($"Processing {cnt}/{cfs.Count()}");
                         this.ProcessFile(cf);
                     }
                     catch (Exception ex)
                     {
+                        Log.Error($"Error processing file {cf}", ex);
                         this.Errors.Add(ex);
                         this.ProcessErrorFile(cf);
                     }
@@ -121,38 +133,47 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         private void ProcessFile(string filePath)
         {
-            StaticLog.Enter(nameof(this.ProcessFile));
+            StaticLog.Enter($"{nameof(this.ProcessFile)} - {filePath}");
             try
             {
                 string fileSHAchksum = string.Empty;
 
                 // get file checksum
-                // using (var sha = System.Security.Cryptography.SHA256.Create())
-                // {
-                //     using (var stream = File.OpenRead(filePath))
-                //     {
-                //         var hash = sha.ComputeHash(stream);
-                //         fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
-                //     }
-                // }
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                {
+                    using (var stream = File.OpenRead(filePath))
+                    {
+                        var hash = sha.ComputeHash(stream);
+                        fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
+                    }
+                }
 
                 // check if our dictionary already has that checksum
-                // if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
-                // {
-                //     if (this.Options.DeleteDuplicates)
-                //     {
-                //         File.Delete(filePath);
-                //         return;
-                //     }
-                // }
-                // else
-                // {
-                //     this.processedFiles[fileSHAchksum] = new List<string>();
-                // }
+                if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
+                {
+                    if (this.Options.DeleteDuplicates)
+                    {
+                        File.Delete(filePath);
+                        return;
+                    }
+                }
+                else
+                {
+                    this.processedFiles[fileSHAchksum] = new List<string>();
+                }
 
                 if (filePath.IsZip())
                 {
-                    Statics.UnZip(filePath);
+                    try
+                    {
+                        Log.Information($"Unzipping {filePath}");
+                        Statics.UnZip(filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error unzipping " + filePath, ex);
+                        this.ProcessErrorFile(filePath);
+                    }
                 }
                 else if (filePath.IsPhoto())
                 {
@@ -181,7 +202,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         public string ProcessErrorFile(string filePath)
         {
-            StaticLog.Enter(nameof(this.ProcessFile));
+            StaticLog.Enter(nameof(this.ProcessErrorFile));
             try
             {
                 DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
@@ -197,39 +218,32 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 string destFileName = Path.Combine(errorDir.FullName, Path.GetFileName(filePath));
                 if (File.Exists(destFileName))
                 {
-                    int existing = 0;
                     do
                     {
-                        existing++;
-                        try
-                        {
-                            destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + existing.ToString());
-                        }
-                        catch (Exception ex)
-                        {
-                            return string.Empty;
-                        }
+                        destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + "_" + Guid.NewGuid().ToString());
                     }
                     while (File.Exists(destFileName));
                 }
 
+                Log.Information($"Copying {filePath} => {destFileName}");
                 File.Copy(filePath, destFileName);
                 return destFileName;
             }
             finally
             {
-                StaticLog.Exit(nameof(this.ProcessFile));
+                StaticLog.Exit(nameof(this.ProcessErrorFile));
             }
         }
 
         public FileInfo ProcessPhoto(string filePath)
         {
-            StaticLog.Enter(nameof(this.ProcessFile));
+            StaticLog.Enter(nameof(this.ProcessPhoto));
             try
             {
                 // capture our filepath as a TagLib Image
                 TagLib.File file = TagLib.File.Create(filePath);
                 DateTime photoDt;
+
                 // attempt to get photo datetime from metadata
                 if (file is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
                 {
@@ -262,18 +276,19 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 }
 
                 // copy file to new destination
+                Log.Information($"Copying {filePath} => {destinationFilePath}");
                 File.Copy(filePath, destinationFilePath);
                 return new FileInfo(destinationFilePath);
             }
             finally
             {
-                StaticLog.Exit(nameof(this.ProcessFile));
+                StaticLog.Exit(nameof(this.ProcessPhoto));
             }
         }
 
         public FileInfo ProcessVideo(string filePath)
         {
-            StaticLog.Enter(nameof(this.ProcessFile));
+            StaticLog.Enter(nameof(this.ProcessVideo));
             try
             {
                 // capture our filepath as a TagLib Image
@@ -308,18 +323,19 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 }
 
                 // copy file to new destination
+                Log.Information($"Copying {filePath} => {destinationFilePath}");
                 File.Copy(filePath, destinationFilePath);
                 return new FileInfo(destinationFilePath);
             }
             finally
             {
-                StaticLog.Exit(nameof(this.ProcessFile));
+                StaticLog.Exit(nameof(this.ProcessVideo));
             }
         }
 
         public FileInfo ProcessMiscFile(string filePath)
         {
-            StaticLog.Enter(nameof(this.ProcessFile));
+            StaticLog.Enter(nameof(this.ProcessMiscFile));
             try
             {
                 FileInfo file1 = new FileInfo(filePath);
@@ -330,12 +346,13 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                     destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
                 }
 
+                Log.Information($"Copying {filePath} => {destFileName}");
                 File.Copy(filePath, destFileName);
                 return new FileInfo(destFileName);
             }
             finally
             {
-                StaticLog.Exit(nameof(this.ProcessFile));
+                StaticLog.Exit(nameof(this.ProcessMiscFile));
             }
         }
 

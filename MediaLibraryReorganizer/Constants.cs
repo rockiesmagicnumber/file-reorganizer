@@ -1,11 +1,16 @@
-// <copyright file="Constants.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+// <copyright file="Constants.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public static class Constants
     {
+        public static class ArgumentFlags
+        {
+            public const string Source = "--source";
+            public const string Output = "--output";
+        }
         public static class RuntimeFiles
         {
             private const string LogDateTimeFormat = "yyyy-MM-ddThh-mm-ss.ffff";
@@ -17,7 +22,6 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         {
             public const string ErrorDirectoryName = "Errors";
             public const string LogDirectoryName = "Logs";
-            public const string OriginalDirectoryName = "Original";
             public const string ProcessedDirectoryName = "Processed";
             public const string SokkaCorpDirectoryName = "SokkaCorp";
         }

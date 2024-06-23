@@ -1,5 +1,5 @@
-// <copyright file="JobReturn.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+// <copyright file="JobReturn.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib

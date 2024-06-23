@@ -1,13 +1,28 @@
-// <copyright file="Options.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
+// <copyright file="Options.cs" company="SokkaCorp">
+// Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
-    public record MediaLibraryOrganizerOptions(DirectoryInfo rootDirectoryInfo, bool isReadOnly = false, bool deleteDuplicates = false)
+    public class MediaLibraryOrganizerOptions
     {
-        public DirectoryInfo RootDirectoryInfo { get; private set; } = rootDirectoryInfo;
-        public bool IsReadOnly { get; private set; } = isReadOnly;
-        public bool DeleteDuplicates { get; private set; } = deleteDuplicates;
+        public MediaLibraryOrganizerOptions(DirectoryInfo originDirectory, bool isReadOnly, bool deleteDuplicates, DirectoryInfo processedDirectory = null)
+        {
+            this.RootDirectoryInfo = originDirectory;
+            this.IsReadOnly = isReadOnly;
+            this.DeleteDuplicates = deleteDuplicates;
+            if (processedDirectory != null)
+            {
+                this.ProcessedDirectoryInfo = processedDirectory;
+            }
+        }
+
+        public DirectoryInfo RootDirectoryInfo { get; set; }
+
+        public bool IsReadOnly { get; set; } = false;
+
+        public bool DeleteDuplicates { get; set; } = false;
+
+        public DirectoryInfo ProcessedDirectoryInfo { get; set; } = Statics.GetProcessedDirectory();
     }
 }
