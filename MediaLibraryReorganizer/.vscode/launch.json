@@ -13,7 +13,10 @@
             "program": "${workspaceFolder}/bin/Debug/net8.0/MediaLibraryOrganizer.dll",
             "args": [
                 "--source",
-                "/media/rockiesmagicnumber/My Passport"
+                "/media/rockiesmagicnumber/My Passport",
+                "--output",
+                "/media/the-archive/jmartin-media",
+                "--exclude-duplicates"
             ],
             "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

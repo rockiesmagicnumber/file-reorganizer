@@ -21,11 +21,13 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             this.processedFiles = [];
             this.Errors = [];
 
-            if (Directory.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, Constants.RuntimeDirectories.ProcessedDirectoryName))
-                && File.Exists(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json")))
+            if (File.Exists(Statics.GetJsonBackup().FullName))
             {
-                string jsonString = File.ReadAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"));
-                this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+                string jsonString = File.ReadAllText(Statics.GetJsonBackup().FullName);
+                if (!string.IsNullOrEmpty(jsonString))
+                {
+                    this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+                }
             }
         }
 
@@ -35,37 +37,12 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             try
             {
                 var jobReturn = new JobReturn();
-                // var everything = Directory.GetFiles(this.Options.RootDirectoryInfo.FullName, "*.*", SearchOption.AllDirectories).ToList();
-                // int cnt = 0;
-                // foreach (var currentPath in everything)
-                // {
-                //     cnt++;
-                //     string destPath = currentPath.Replace(this.Options.RootDirectoryInfo.FullName, Statics.GetOriginalDirectory().FullName);
-                //     Log.Information($"Copying {cnt}/{everything.Count}: {currentPath} => {destPath}");
-                //     try
-                //     {
-                //         if (!File.Exists(destPath))
-                //         {
-                //             _ = Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-                //             File.Copy(currentPath, destPath);
-                //         }
-                //         else
-                //         {
-                //             Log.Information("File exists, Skipping");
-                //         }
-                //     }
-                //     catch (Exception ex)
-                //     {
-                //         this.Errors.Add(ex);
-                //         this.ProcessErrorFile(currentPath);
-                //     }
-                // }
 
-                this.ProcessDirectory(this.Options.RootDirectoryInfo);
+                this.UnzipAllRecursively(this.Options.SourceDirectoryInfo);
+                this.ProcessDirectory(this.Options.SourceDirectoryInfo);
                 jobReturn.Success = true;
                 jobReturn.HandledError = new AggregateException(this.Errors);
-                string jsArchive = JsonSerializer.Serialize(this.processedFiles);
-                File.WriteAllText(Path.Combine(this.Options.RootDirectoryInfo.FullName, "jsonBackup.json"), jsArchive);
+                this.Cleanup();
                 return jobReturn;
             }
             catch (Exception ex)
@@ -81,8 +58,15 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
             finally
             {
+                string jsArchive = JsonSerializer.Serialize(this.processedFiles);
+                File.WriteAllText(Statics.GetJsonBackup().FullName, jsArchive);
                 StaticLog.Exit(nameof(this.OrganizePhotos));
             }
+        }
+
+        private void Cleanup()
+        {
+            Directory.Delete(Statics.GetUnzippedDirectory(this.Options).FullName, true);
         }
 
         private void ProcessDirectory(DirectoryInfo directory)
@@ -94,27 +78,20 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 var childDirectories = directory.EnumerateDirectories().ToList();
                 var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
 
-                // Extract all Zip files first so we can process their child directories
-                foreach (var cf in childFiles.Where(c => c.EndsWith(Constants.FileExtensions.Zip)))
-                {
-                    Statics.UnZip(cf);
-                }
-
                 // process all child directories
                 foreach (var child in childDirectories)
                 {
                     this.ProcessDirectory(child);
                 }
 
-                // process all NOT-zip files
-                IEnumerable<string> cfs = childFiles.Where(c => !c.EndsWith(Constants.FileExtensions.Zip));
+                // process all files
                 int cnt = 0;
-                foreach (var cf in cfs)
+                foreach (var cf in childFiles)
                 {
                     cnt++;
                     try
                     {
-                        Log.Information($"Processing {cnt}/{cfs.Count()}");
+                        Log.Information($"Processing {cnt}/{childFiles.Count}");
                         this.ProcessFile(cf);
                     }
                     catch (Exception ex)
@@ -129,6 +106,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             {
                 StaticLog.Exit(nameof(this.ProcessDirectory));
             }
+        }
+
+        private void ProcessFile(FileInfo fileInfo)
+        {
+            this.ProcessFile(fileInfo.FullName);
         }
 
         private void ProcessFile(string filePath)
@@ -149,11 +131,17 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 }
 
                 // check if our dictionary already has that checksum
-                if (this.processedFiles.TryGetValue(fileSHAchksum, out _))
+                if (this.processedFiles.TryGetValue(fileSHAchksum, out var filepaths) && filepaths is not null)
                 {
-                    if (this.Options.DeleteDuplicates)
+                    if (filepaths.Contains(filePath))
                     {
-                        File.Delete(filePath);
+                        Log.Information($"File already processed, skipping | {filePath}");
+                        return;
+                    }
+
+                    if (this.Options.ExcludeDuplicates)
+                    {
+                        Log.Information($"Hash already processed, skipping | {filePath}");
                         return;
                     }
                 }
@@ -164,16 +152,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
                 if (filePath.IsZip())
                 {
-                    try
-                    {
-                        Log.Information($"Unzipping {filePath}");
-                        Statics.UnZip(filePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error unzipping " + filePath, ex);
-                        this.ProcessErrorFile(filePath);
-                    }
+                    return;
                 }
                 else if (filePath.IsPhoto())
                 {
@@ -200,7 +179,12 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        public string ProcessErrorFile(string filePath)
+        private string ProcessErrorFile(FileInfo fileInfo)
+        {
+            return this.ProcessErrorFile(fileInfo.FullName);
+        }
+
+        private string ProcessErrorFile(string filePath)
         {
             StaticLog.Enter(nameof(this.ProcessErrorFile));
             try
@@ -235,7 +219,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        public FileInfo ProcessPhoto(string filePath)
+        private FileInfo ProcessPhoto(string filePath)
         {
             StaticLog.Enter(nameof(this.ProcessPhoto));
             try
@@ -286,7 +270,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        public FileInfo ProcessVideo(string filePath)
+        private FileInfo ProcessVideo(string filePath)
         {
             StaticLog.Enter(nameof(this.ProcessVideo));
             try
@@ -333,7 +317,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        public FileInfo ProcessMiscFile(string filePath)
+        private FileInfo ProcessMiscFile(string filePath)
         {
             StaticLog.Enter(nameof(this.ProcessMiscFile));
             try
@@ -353,6 +337,40 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             finally
             {
                 StaticLog.Exit(nameof(this.ProcessMiscFile));
+            }
+        }
+
+        private void UnzipAllRecursively(DirectoryInfo directory)
+        {
+            StaticLog.Enter(nameof(this.UnzipAllRecursively));
+            try
+            {
+                var allZips = directory.EnumerateFiles("*.zip", new EnumerationOptions() { RecurseSubdirectories = true });
+                foreach (var zip in allZips)
+                {
+                    try
+                    {
+                        Log.Information($"Unzipping {zip.FullName}");
+                        Statics.UnZip(zip, this.Options);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error unzipping " + zip.FullName, ex);
+                        this.ProcessErrorFile(zip);
+                    }
+                }
+
+                var newZips = Statics.GetUnzippedDirectory(this.Options).EnumerateFiles("*.zip", new EnumerationOptions { RecurseSubdirectories = true });
+                while (newZips.Any())
+                {
+                    var newZip = newZips.First();
+                    Statics.UnZip(newZip, this.Options);
+                    newZip.Delete();
+                }
+            }
+            finally
+            {
+                StaticLog.Exit(nameof(this.UnzipAllRecursively));
             }
         }
 

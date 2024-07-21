@@ -43,8 +43,8 @@ namespace SokkaCorp.MediaLibraryOrganizer
             Log.Debug("Source Directory: {executionDirectory}", sourceDirectory.FullName);
 
             bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
-            bool deleteDupes = false; // args.Contains("--delete-duplicates");
-            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(sourceDirectory, readOnly, deleteDupes, outputDirectory);
+            bool excludeDuplicates = args.Contains(Constants.ArgumentFlags.ExcludeDuplicates);
+            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(sourceDirectory, readOnly, excludeDuplicates, outputDirectory);
             MediaLibraryOrganizer pr = new MediaLibraryOrganizer(executionOptions);
             JobReturn success = pr.OrganizePhotos();
             Log.Information("Success: " + success.Success.ToString());

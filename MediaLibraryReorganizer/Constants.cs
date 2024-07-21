@@ -10,7 +10,9 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         {
             public const string Source = "--source";
             public const string Output = "--output";
+            public const string ExcludeDuplicates = "--exclude-duplicates";
         }
+
         public static class RuntimeFiles
         {
             private const string LogDateTimeFormat = "yyyy-MM-ddThh-mm-ss.ffff";
@@ -24,6 +26,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             public const string LogDirectoryName = "Logs";
             public const string ProcessedDirectoryName = "Processed";
             public const string SokkaCorpDirectoryName = "SokkaCorp";
+            public const string UnzippedDirectoryName = "Unzipped";
         }
 
         public static class FolderCategories

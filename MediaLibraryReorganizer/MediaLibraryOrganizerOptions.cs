@@ -6,23 +6,34 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public class MediaLibraryOrganizerOptions
     {
-        public MediaLibraryOrganizerOptions(DirectoryInfo originDirectory, bool isReadOnly, bool deleteDuplicates, DirectoryInfo processedDirectory = null)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MediaLibraryOrganizerOptions"/> class.
+        /// </summary>
+        /// <param name="originDirectory"></param>
+        /// <param name="isReadOnly"></param>
+        /// <param name="excludeDuplicates"></param>
+        /// <param name="processedDirectory"></param>
+        public MediaLibraryOrganizerOptions(
+            DirectoryInfo originDirectory,
+            bool isReadOnly,
+            bool excludeDuplicates,
+            DirectoryInfo processedDirectory)
         {
-            this.RootDirectoryInfo = originDirectory;
+            this.SourceDirectoryInfo = originDirectory;
+            Statics.SourceDirectory ??= this.SourceDirectoryInfo;
+
             this.IsReadOnly = isReadOnly;
-            this.DeleteDuplicates = deleteDuplicates;
+            this.ExcludeDuplicates = excludeDuplicates;
             if (processedDirectory != null)
             {
-                this.ProcessedDirectoryInfo = processedDirectory;
+                Statics.OutputDirectory ??= processedDirectory;
             }
         }
 
-        public DirectoryInfo RootDirectoryInfo { get; set; }
+        public DirectoryInfo SourceDirectoryInfo { get; set; }
 
         public bool IsReadOnly { get; set; } = false;
 
-        public bool DeleteDuplicates { get; set; } = false;
-
-        public DirectoryInfo ProcessedDirectoryInfo { get; set; } = Statics.GetProcessedDirectory();
+        public bool ExcludeDuplicates { get; set; } = false;
     }
 }

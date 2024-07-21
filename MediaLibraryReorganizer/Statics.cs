@@ -17,6 +17,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public static DirectoryInfo SourceDirectory = null;
         public static DirectoryInfo OutputDirectory = null;
 
+        public static FileInfo GetJsonBackup()
+        {
+            return new FileInfo(Path.Combine(GetSokkaCorpDirectory().FullName, "jsonBackup.json"));
+        }
+
         public static DirectoryInfo GetDirectoryFromDateTime(DateTime? dt)
         {
             if (!dt.HasValue)
@@ -190,12 +195,22 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             return Directory.CreateDirectory(ret);
         }
 
-        public static void UnZip(string filePath)
+        public static DirectoryInfo GetUnzippedDirectory(MediaLibraryOrganizerOptions options)
         {
-            string dname = Path.GetDirectoryName(filePath) ?? filePath.Replace(Path.GetFileNameWithoutExtension(filePath), string.Empty);
-            string newDname = Path.Combine(dname, Path.GetFileNameWithoutExtension(filePath));
-            System.IO.Directory.CreateDirectory(newDname);
-            ZipFile.ExtractToDirectory(filePath, dname);
+            var ret = Path.Combine(
+                options.SourceDirectoryInfo.FullName,
+                Constants.RuntimeDirectories.UnzippedDirectoryName);
+            return Directory.CreateDirectory(ret);
+        }
+
+        public static void UnZip(FileInfo fileInfo, MediaLibraryOrganizerOptions options)
+        {
+            UnZip(fileInfo.FullName, options);
+        }
+
+        public static void UnZip(string filePath, MediaLibraryOrganizerOptions options)
+        {
+            ZipFile.ExtractToDirectory(filePath, GetUnzippedDirectory(options).FullName, overwriteFiles: true);
         }
 
         public static bool IsPhoto(this string filePath)
