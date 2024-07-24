@@ -5,11 +5,12 @@
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     using System.Text.Json;
+    using MDE = MetadataExtractor;
     using Serilog;
 
     public class MediaLibraryOrganizer
     {
-        private FileDictionary<NString, List<string>> processedFiles;
+        private FileDictionary<NString, List<FileInfo>> processedFiles;
 
         private MediaLibraryOrganizerOptions Options { get; set; }
 
@@ -26,14 +27,77 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 string jsonString = File.ReadAllText(Statics.GetJsonBackup().FullName);
                 if (!string.IsNullOrEmpty(jsonString))
                 {
-                    this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<string>>>(jsonString);
+                    this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<FileInfo>>>(jsonString);
                 }
             }
         }
 
-        public JobReturn OrganizePhotos()
+        public JobReturn PruneJsonBackup()
         {
-            StaticLog.Enter(nameof(this.OrganizePhotos));
+            StaticLog.Enter(nameof(this.PruneJsonBackup));
+            var jr = new JobReturn() { Success = true };
+            try
+            {
+                for (int i = 0; i < this.processedFiles.Count; i++)
+                {
+                    var file = this.processedFiles.ElementAt(i);
+                    if (!file.Value.FirstOrDefault()?.Exists ?? true)
+                    {
+                        this.processedFiles.Remove(file.Key);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ah jeez");
+                jr.HandledError = new AggregateException("error processing dictionary", ex);
+                jr.Success = false;
+            }
+            finally
+            {
+                this.WriteJsonBackup();
+                StaticLog.Exit(nameof(this.PruneJsonBackup));
+            }
+
+            return jr;
+        }
+
+        public JobReturn RepopulateJsonBackup()
+        {
+            StaticLog.Enter(nameof(this.RepopulateJsonBackup));
+            var jobReturn = new JobReturn() { Success = true };
+            try
+            {
+                this.processedFiles = new FileDictionary<NString, List<FileInfo>>();
+                var allThemFiles = Statics.GetProcessedDirectory().EnumerateFiles("*.*", SearchOption.AllDirectories);
+                foreach (var thatFile in allThemFiles)
+                {
+                    try
+                    {
+                        this.ProcessFile(thatFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Ah jeez");
+                        this.Errors.Add(ex);
+                    }
+                }
+
+                jobReturn.Success = true;
+                jobReturn.HandledError = new AggregateException(this.Errors);
+                this.Cleanup();
+                return jobReturn;
+            }
+            finally
+            {
+                this.WriteJsonBackup();
+                StaticLog.Exit(nameof(this.RepopulateJsonBackup));
+            }
+        }
+
+        public JobReturn OrganizeFiles()
+        {
+            StaticLog.Enter(nameof(this.OrganizeFiles));
             try
             {
                 var jobReturn = new JobReturn();
@@ -58,15 +122,20 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
             finally
             {
-                string jsArchive = JsonSerializer.Serialize(this.processedFiles);
-                File.WriteAllText(Statics.GetJsonBackup().FullName, jsArchive);
-                StaticLog.Exit(nameof(this.OrganizePhotos));
+                this.WriteJsonBackup();
+                StaticLog.Exit(nameof(this.OrganizeFiles));
             }
+        }
+
+        private void WriteJsonBackup()
+        {
+            string jsArchive = JsonSerializer.Serialize(this.processedFiles);
+            File.WriteAllText(Statics.GetJsonBackup().FullName, jsArchive);
         }
 
         private void Cleanup()
         {
-            Directory.Delete(Statics.GetUnzippedDirectory(this.Options).FullName, true);
+            System.IO.Directory.Delete(Statics.GetUnzippedDirectory(this.Options).FullName, true);
         }
 
         private void ProcessDirectory(DirectoryInfo directory)
@@ -74,9 +143,8 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             StaticLog.Enter($"{nameof(this.ProcessDirectory)} - {directory.FullName}");
             try
             {
-                // TODO WHAT IF THERE IS A DIRECTORY CALLED PROCESSED ALREADY
-                var childDirectories = directory.EnumerateDirectories().ToList();
-                var childFiles = directory.EnumerateFiles().Select(x => x.FullName).ToList();
+                var childDirectories = directory.EnumerateDirectories();
+                var childFiles = directory.EnumerateFiles();
 
                 // process all child directories
                 foreach (var child in childDirectories)
@@ -91,7 +159,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                     cnt++;
                     try
                     {
-                        Log.Information($"Processing {cnt}/{childFiles.Count}");
+                        Log.Information($"Processing {cnt}/{childFiles.Count()}");
                         this.ProcessFile(cf);
                     }
                     catch (Exception ex)
@@ -110,68 +178,40 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         private void ProcessFile(FileInfo fileInfo)
         {
-            this.ProcessFile(fileInfo.FullName);
-        }
-
-        private void ProcessFile(string filePath)
-        {
-            StaticLog.Enter($"{nameof(this.ProcessFile)} - {filePath}");
+            StaticLog.Enter($"{nameof(this.ProcessFile)} - {fileInfo.FullName}");
             try
             {
-                string fileSHAchksum = string.Empty;
-
-                // get file checksum
-                using (var sha = System.Security.Cryptography.SHA256.Create())
-                {
-                    using (var stream = File.OpenRead(filePath))
-                    {
-                        var hash = sha.ComputeHash(stream);
-                        fileSHAchksum = BitConverter.ToString(hash).Replace("-", string.Empty);
-                    }
-                }
+                string fileSHAchksum = Statics.GetChecksum(fileInfo);
 
                 // check if our dictionary already has that checksum
-                if (this.processedFiles.TryGetValue(fileSHAchksum, out var filepaths) && filepaths is not null)
+                if (this.processedFiles.TryGetValue(fileSHAchksum, out var files) && files is not null)
                 {
-                    if (filepaths.Contains(filePath))
+                    if (files.Contains(fileInfo))
                     {
-                        Log.Information($"File already processed, skipping | {filePath}");
+                        Log.Information($"File already processed, skipping | {fileInfo}");
                         return;
                     }
 
                     if (this.Options.ExcludeDuplicates)
                     {
-                        Log.Information($"Hash already processed, skipping | {filePath}");
+                        Log.Information($"Hash already processed, skipping | {fileInfo} | {fileSHAchksum}");
                         return;
                     }
                 }
                 else
                 {
-                    this.processedFiles[fileSHAchksum] = new List<string>();
+                    this.processedFiles[fileSHAchksum] = new List<FileInfo>();
                 }
 
-                if (filePath.IsZip())
+                if (fileInfo.IsZip())
                 {
                     return;
                 }
-                else if (filePath.IsPhoto())
-                {
-                    this.ProcessPhoto(filePath);
-                }
-                else if (filePath.IsVideo())
-                {
-                    this.ProcessVideo(filePath);
-                }
-                else if (filePath.IsMusic())
-                {
-                    //     this.ProcessMusic(filePath);
-                }
-                else
-                {
-                    this.ProcessMiscFile(filePath);
-                }
 
-                this.processedFiles[fileSHAchksum].Add(filePath);
+                FileInfo destinationPath = this.GetDestinationFile(fileInfo);
+                destinationPath = this.CreateDestinationFile(fileInfo, destinationPath);
+
+                this.processedFiles[fileSHAchksum].Add(destinationPath);
             }
             finally
             {
@@ -179,39 +219,74 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        private string ProcessErrorFile(FileInfo fileInfo)
+        private FileInfo CreateDestinationFile(FileInfo fileInfo, FileInfo destinationPath)
         {
-            return this.ProcessErrorFile(fileInfo.FullName);
+            if (!this.Options.ExcludeDuplicates)
+            {
+                if (destinationPath.Exists)
+                {
+                    do
+                    {
+                        string newFilename = Path.Combine(
+                            destinationPath.DirectoryName,
+                            Path.GetFileNameWithoutExtension(destinationPath.FullName),
+                            Guid.NewGuid().ToString(),
+                            destinationPath.Extension);
+                        destinationPath = new FileInfo(newFilename);
+                    }
+                    while (destinationPath.Exists);
+                }
+            }
+
+            Log.Information($"Copying {fileInfo.FullName} => {destinationPath.FullName}");
+
+            if (!destinationPath.Exists)
+            {
+                destinationPath = fileInfo.CopyTo(destinationPath.FullName);
+            }
+
+            return destinationPath;
         }
 
-        private string ProcessErrorFile(string filePath)
+        private FileInfo GetDestinationFile(FileInfo fileInfo)
+        {
+            FileInfo destinationPath;
+            if (fileInfo.IsPhoto())
+            {
+                destinationPath = this.ProcessPhoto(fileInfo);
+            }
+            else if (fileInfo.IsVideo())
+            {
+                destinationPath = this.ProcessVideo(fileInfo);
+            }
+            // else if (file.IsMusic())
+            // {
+            //     //     this.ProcessMusic(file);
+            // }
+            else
+            {
+                destinationPath = this.ProcessMiscFile(fileInfo);
+            }
+
+            return destinationPath;
+        }
+
+        private FileInfo ProcessErrorFile(FileInfo file)
         {
             StaticLog.Enter(nameof(this.ProcessErrorFile));
             try
             {
                 DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
-                if (filePath.IsPhoto())
+                if (file.IsPhoto())
                 {
                     errorDir = Statics.GetErrorPhotoDirectory();
                 }
-                else if (filePath.IsVideo())
+                else if (file.IsVideo())
                 {
                     errorDir = Statics.GetErrorVideoDirectory();
                 }
 
-                string destFileName = Path.Combine(errorDir.FullName, Path.GetFileName(filePath));
-                if (File.Exists(destFileName))
-                {
-                    do
-                    {
-                        destFileName = destFileName.Replace(Path.GetFileNameWithoutExtension(destFileName), Path.GetFileNameWithoutExtension(destFileName) + "_" + Guid.NewGuid().ToString());
-                    }
-                    while (File.Exists(destFileName));
-                }
-
-                Log.Information($"Copying {filePath} => {destFileName}");
-                File.Copy(filePath, destFileName);
-                return destFileName;
+                return new FileInfo(Path.Combine(errorDir.FullName, file.Name));
             }
             finally
             {
@@ -219,50 +294,31 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        private FileInfo ProcessPhoto(string filePath)
+        private FileInfo ProcessPhoto(FileInfo file)
         {
             StaticLog.Enter(nameof(this.ProcessPhoto));
             try
             {
-                // capture our filepath as a TagLib Image
-                TagLib.File file = TagLib.File.Create(filePath);
+                // capture our file as a TagLib Image
+                TagLib.File tagfile = TagLib.File.Create(file.FullName);
                 DateTime photoDt;
 
                 // attempt to get photo datetime from metadata
-                if (file is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
+                if (tagfile is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
                 {
                     photoDt = image.ImageTag.DateTime.Value;
                 }
-                else if ((file.Tag.DateTagged ?? default) != default)
+                else if ((tagfile.Tag.DateTagged ?? default) != default)
                 {
-                    photoDt = file.Tag.DateTagged.Value;
+                    photoDt = tagfile.Tag.DateTagged.Value;
                 }
                 else
                 {
-                    FileInfo fi = new FileInfo(filePath);
-                    photoDt = fi.CreationTime;
+                    photoDt = file.CreationTime;
                 }
 
                 // get datetime directory
-                var destinationDirectory = Statics.GetPhotoDirectoryFromDateTime(photoDt);
-                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-
-                // check for duplicates, rename file if they exist
-                if (File.Exists(destinationFilePath))
-                {
-                    int existing = 0;
-                    do
-                    {
-                        existing++;
-                        destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
-                    }
-                    while (File.Exists(destinationFilePath));
-                }
-
-                // copy file to new destination
-                Log.Information($"Copying {filePath} => {destinationFilePath}");
-                File.Copy(filePath, destinationFilePath);
-                return new FileInfo(destinationFilePath);
+                return new FileInfo(Path.Combine(Statics.GetPhotoDirectoryFromDateTime(photoDt).FullName, file.Name));
             }
             finally
             {
@@ -270,46 +326,38 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        private FileInfo ProcessVideo(string filePath)
+        private FileInfo ProcessVideo(FileInfo file)
         {
             StaticLog.Enter(nameof(this.ProcessVideo));
             try
             {
-                // capture our filepath as a TagLib Image
-                TagLib.File file = TagLib.File.Create(filePath);
+                TagLib.File tagfile = null;
+
+                // capture our file as a TagLib Image
+                try
+                {
+                    tagfile = TagLib.File.Create(file.FullName);
+                }
+
+                // we're not actually gonna handle the error, TagLib is just gonna fail on .MOV files.
+                catch
+                {
+                    var dir = MDE.ImageMetadataReader.ReadMetadata(file.FullName);
+                }
 
                 // attempt to get photo datetime from metadata
                 DateTime videoDt;
-                if (file is not null && (file.Tag?.DateTagged ?? default) != default)
+                if (file is not null && (tagfile.Tag?.DateTagged ?? default) != default)
                 {
-                    videoDt = file.Tag.DateTagged.Value;
+                    videoDt = tagfile.Tag.DateTagged.Value;
                 }
                 else
                 {
-                    FileInfo fi = new FileInfo(filePath);
-                    videoDt = fi.CreationTime;
+                    videoDt = file.CreationTime;
                 }
 
                 // get datetime directory
-                var destinationDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt);
-                string destinationFilePath = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-
-                // check for duplicates, rename file if they exist
-                if (File.Exists(destinationFilePath))
-                {
-                    int existing = 0;
-                    do
-                    {
-                        existing++;
-                        destinationFilePath = destinationFilePath.Replace(Path.GetFileNameWithoutExtension(destinationFilePath), Path.GetFileNameWithoutExtension(destinationFilePath) + existing.ToString());
-                    }
-                    while (File.Exists(destinationFilePath));
-                }
-
-                // copy file to new destination
-                Log.Information($"Copying {filePath} => {destinationFilePath}");
-                File.Copy(filePath, destinationFilePath);
-                return new FileInfo(destinationFilePath);
+                return new FileInfo(Path.Combine(Statics.GetVideoDirectoryFromDateTime(videoDt).FullName, file.Name));
             }
             finally
             {
@@ -317,21 +365,13 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        private FileInfo ProcessMiscFile(string filePath)
+        private FileInfo ProcessMiscFile(FileInfo file)
         {
             StaticLog.Enter(nameof(this.ProcessMiscFile));
             try
             {
-                FileInfo file1 = new FileInfo(filePath);
-                var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file1.CreationTime);
-                string destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileName(filePath));
-                if (File.Exists(destFileName))
-                {
-                    destFileName = Path.Combine(destinationDirectory.FullName, Path.GetFileNameWithoutExtension(filePath) + Guid.NewGuid().ToString() + Path.GetExtension(filePath));
-                }
-
-                Log.Information($"Copying {filePath} => {destFileName}");
-                File.Copy(filePath, destFileName);
+                var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file.CreationTime);
+                string destFileName = Path.Combine(destinationDirectory.FullName, file.Name);
                 return new FileInfo(destFileName);
             }
             finally
@@ -374,7 +414,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        // public FileInfo ProcessMusicFile(string filePath)
+        // public FileInfo ProcessMusicFile(string file)
         // {
 
         // }

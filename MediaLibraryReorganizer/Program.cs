@@ -46,9 +46,22 @@ namespace SokkaCorp.MediaLibraryOrganizer
             bool excludeDuplicates = args.Contains(Constants.ArgumentFlags.ExcludeDuplicates);
             MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(sourceDirectory, readOnly, excludeDuplicates, outputDirectory);
             MediaLibraryOrganizer pr = new MediaLibraryOrganizer(executionOptions);
-            JobReturn success = pr.OrganizePhotos();
+            JobReturn success;
+            if (args.Contains(Constants.ArgumentFlags.RefreshJsonBackup))
+            {
+                success = pr.PruneJsonBackup();
+            }
+            else if (args.Contains(Constants.ArgumentFlags.RepopulateJsonBackup))
+            {
+                success = pr.RepopulateJsonBackup();
+            }
+            else
+            {
+                success = pr.OrganizeFiles();
+            }
+
             Log.Information("Success: " + success.Success.ToString());
-            Log.Information("\tHandled File Errors: " + success.HandledError.InnerExceptions.Count.ToString());
+            Log.Information("\tHandled File Errors: " + success.HandledError?.InnerExceptions?.Count().ToString() ?? "0");
             Log.CloseAndFlush();
         }
     }

@@ -203,55 +203,50 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             return Directory.CreateDirectory(ret);
         }
 
-        public static void UnZip(FileInfo fileInfo, MediaLibraryOrganizerOptions options)
+        public static void UnZip(FileInfo filePath, MediaLibraryOrganizerOptions options)
         {
-            UnZip(fileInfo.FullName, options);
+            ZipFile.ExtractToDirectory(filePath.FullName, GetUnzippedDirectory(options).FullName, overwriteFiles: true);
         }
 
-        public static void UnZip(string filePath, MediaLibraryOrganizerOptions options)
-        {
-            ZipFile.ExtractToDirectory(filePath, GetUnzippedDirectory(options).FullName, overwriteFiles: true);
-        }
-
-        public static bool IsPhoto(this string filePath)
+        public static bool IsPhoto(this FileInfo filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            string extension = filePath.Extension.ToLowerInvariant();
 
             // Check against a list of common photo file extensions
             return PhotoExtensions.Contains(extension);
         }
 
-        public static bool IsZip(this string filePath)
+        public static bool IsZip(this FileInfo filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            string extension = filePath.Extension.ToLowerInvariant();
 
             // Check against a list of common .zips - we're not gonna bother with gzip or whatever right now
             return extension.EndsWith(Constants.FileExtensions.Zip);
         }
 
-        public static bool IsVideo(this string filePath)
+        public static bool IsVideo(this FileInfo filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            string extension = filePath.Extension.ToLowerInvariant();
 
             // Check against a list of common video file extensions
             return VideoExtensions.Contains(extension);
         }
 
-        public static bool IsMusic(this string filePath)
+        public static bool IsMusic(this FileInfo filePath)
         {
             // Get the file extension in lowercase for case-insensitive comparison
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            string extension = filePath.Extension.ToLowerInvariant();
 
             // Check against a list of common video file extensions
             return MusicExtensions.Contains(extension);
         }
 
-        private static string GetChecksum(string file)
+        public static string GetChecksum(FileInfo file)
         {
-            using var stream = new BufferedStream(File.OpenRead(file), 1200000);
+            using var stream = new BufferedStream(file.OpenRead(), 1200000);
             using var sha = SHA256.Create();
             byte[] checksum = sha.ComputeHash(stream);
             return BitConverter.ToString(checksum).Replace("-", string.Empty);

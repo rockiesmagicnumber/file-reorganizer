@@ -12,8 +12,10 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/bin/Debug/net8.0/MediaLibraryOrganizer.dll",
             "args": [
-                "--source",
-                "/media/rockiesmagicnumber/My Passport",
+                // "--refresh-json",
+                "--repopulate-json",
+                //"--source",
+                //"/media/rockiesmagicnumber/2094-D1F3",
                 "--output",
                 "/media/the-archive/jmartin-media",
                 "--exclude-duplicates"

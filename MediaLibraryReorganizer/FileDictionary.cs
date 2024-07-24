@@ -7,18 +7,18 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
     using System.Collections;
     using System.Diagnostics.CodeAnalysis;
 
-    public class FileDictionary<T, TK> : IDictionary<string, List<string>>
+    public class FileDictionary<T, TK> : IDictionary<string, List<FileInfo>>
     where T : struct
-    where TK : List<string>
+    where TK : List<FileInfo>
     {
-        private readonly Dictionary<string, List<string>> dict = [];
+        private readonly Dictionary<string, List<FileInfo>> dict = [];
 
         /// <inheritdoc/>
-        public List<string> this[string key]
+        public List<FileInfo> this[string key]
         {
             get
             {
-                if (!this.dict.TryGetValue(key, out List<string>? files))
+                if (!this.dict.TryGetValue(key, out List<FileInfo>? files))
                 {
                     files = [];
                 }
@@ -28,7 +28,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
             set
             {
-                if (this.dict.TryGetValue(key, out List<string>? files))
+                if (this.dict.TryGetValue(key, out List<FileInfo>? files))
                 {
                     this.dict[key] = files.Union(value).ToList();
                 }
@@ -43,7 +43,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public ICollection<string> Keys => this.dict.Keys;
 
         /// <inheritdoc/>
-        public ICollection<List<string>> Values => this.dict.Values;
+        public ICollection<List<FileInfo>> Values => this.dict.Values;
 
         /// <inheritdoc/>
         public int Count => this.dict.Count;
@@ -52,13 +52,13 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public bool IsReadOnly => false;
 
         /// <inheritdoc/>
-        public void Add(string key, List<string> value)
+        public void Add(string key, List<FileInfo> value)
         {
             this.dict.Add(key, value);
         }
 
         /// <inheritdoc/>
-        public void Add(KeyValuePair<string, List<string>> item)
+        public void Add(KeyValuePair<string, List<FileInfo>> item)
         {
             this.dict.Add(item.Key, item.Value);
         }
@@ -70,7 +70,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         }
 
         /// <inheritdoc/>
-        public bool Contains(KeyValuePair<string, List<string>> item)
+        public bool Contains(KeyValuePair<string, List<FileInfo>> item)
         {
             return this.dict.Contains(item);
         }
@@ -82,13 +82,13 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         }
 
         /// <inheritdoc/>
-        public void CopyTo(KeyValuePair<string, List<string>>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<string, List<FileInfo>>[] array, int arrayIndex)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<string, List<string>>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string, List<FileInfo>>> GetEnumerator()
         {
             return this.dict.GetEnumerator();
         }
@@ -100,15 +100,15 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         }
 
         /// <inheritdoc/>
-        public bool Remove(KeyValuePair<string, List<string>> item)
+        public bool Remove(KeyValuePair<string, List<FileInfo>> item)
         {
             return this.dict.Remove(item.Key);
         }
 
         /// <inheritdoc/>
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out List<string> value)
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out List<FileInfo> value)
         {
-            if (this.dict.TryGetValue(key, out List<string>? t))
+            if (this.dict.TryGetValue(key, out List<FileInfo>? t))
             {
                 value = t;
                 return true;

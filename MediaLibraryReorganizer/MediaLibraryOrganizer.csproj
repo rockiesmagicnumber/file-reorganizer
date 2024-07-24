@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="metadataextractor" Version="2.8.1" />
     <PackageReference Include="serilog" Version="4.0.0" />
     <PackageReference Include="Serilog.sinks.console" Version="6.0.0" />
     <PackageReference Include="Serilog.sinks.file" Version="5.0.0" />

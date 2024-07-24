@@ -11,13 +11,15 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             public const string Source = "--source";
             public const string Output = "--output";
             public const string ExcludeDuplicates = "--exclude-duplicates";
+            public const string RefreshJsonBackup = "--refresh-json";
+            public const string RepopulateJsonBackup = "--repopulate-json";
         }
 
         public static class RuntimeFiles
         {
             private const string LogDateTimeFormat = "yyyy-MM-ddThh-mm-ss.ffff";
 
-            public static string LogFileName => $"SokkaCorp-{DateTime.Now.ToString(LogDateTimeFormat)}";
+            public static string LogFileName => $"SokkaCorp-{DateTime.Now.ToString(LogDateTimeFormat)}.log";
         }
 
         public static class RuntimeDirectories
