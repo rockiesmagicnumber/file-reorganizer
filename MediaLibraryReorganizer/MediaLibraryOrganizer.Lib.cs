@@ -7,6 +7,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
     using System.Text.Json;
     using MDE = MetadataExtractor;
     using Serilog;
+    using MetadataExtractor.Formats.QuickTime;
 
     public class MediaLibraryOrganizer
     {
@@ -27,7 +28,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 string jsonString = File.ReadAllText(Statics.GetJsonBackup().FullName);
                 if (!string.IsNullOrEmpty(jsonString))
                 {
-                    this.processedFiles = JsonSerializer.Deserialize<FileDictionary<NString, List<FileInfo>>>(jsonString);
+                    var files = JsonSerializer.Deserialize<Dictionary<NString, List<string>>>(jsonString);
+                    foreach (var k in files.Keys)
+                    {
+                        this.processedFiles[k] = new List<FileInfo>(files[k].Select(x => new FileInfo(x)));
+                    }
                 }
             }
         }
@@ -129,7 +134,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         private void WriteJsonBackup()
         {
-            string jsArchive = JsonSerializer.Serialize(this.processedFiles);
+            string jsArchive = JsonSerializer.Serialize(this.processedFiles.ToDictionary(x => x.Key, x => x.Value.Select(y => y.FullName)));
             File.WriteAllText(Statics.GetJsonBackup().FullName, jsArchive);
         }
 
@@ -342,14 +347,30 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 // we're not actually gonna handle the error, TagLib is just gonna fail on .MOV files.
                 catch
                 {
-                    var dir = MDE.ImageMetadataReader.ReadMetadata(file.FullName);
                 }
 
                 // attempt to get photo datetime from metadata
-                DateTime videoDt;
-                if (file is not null && (tagfile.Tag?.DateTagged ?? default) != default)
+                DateTime? videoDt = default(DateTime);
+                if (tagfile is not null && (tagfile.Tag?.DateTagged ?? default) != default)
                 {
                     videoDt = tagfile.Tag.DateTagged.Value;
+                }
+                else if (file?.FullName.EndsWith(Constants.FileExtensions.Video.MOV, StringComparison.InvariantCultureIgnoreCase) ?? false)
+                {
+                    IReadOnlyList<MDE.Directory> tags = MDE.ImageMetadataReader.ReadMetadata(file.FullName);
+                    foreach (var tag in tags)
+                    {
+                        if (tag is QuickTimeMovieHeaderDirectory movie)
+                        {
+                            // 3 just so happens to be the created date
+                            //  https://github.com/drewnoakes/metadata-extractor-dotnet/blob/main/MetadataExtractor/Formats/QuickTime/QuickTimeMovieHeaderDirectory.cs
+                            if (movie.GetObject(QuickTimeMovieHeaderDirectory.TagCreated) is DateTime dt)
+                            {
+                                videoDt = dt;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -357,7 +378,8 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 }
 
                 // get datetime directory
-                return new FileInfo(Path.Combine(Statics.GetVideoDirectoryFromDateTime(videoDt).FullName, file.Name));
+                string videoDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt).FullName;
+                return new FileInfo(Path.Combine(videoDirectory, file.Name));
             }
             finally
             {

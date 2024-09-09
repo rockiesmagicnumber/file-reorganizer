@@ -94,6 +94,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
+        // eg ~/MyExternalDrive/SokkaCorp
         public static DirectoryInfo GetSokkaCorpDirectory()
         {
             var ret = Path.Combine(
@@ -107,6 +108,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             return Path.Combine(GetLogsDirectory().FullName, Constants.RuntimeFiles.LogFileName);
         }
 
+        /// <summary>
+        /// Returns Log Directory |
+        /// eg ~/MyExternalDrive/SokkaCorp/Logs
+        /// </summary>
+        /// <returns><seealso cref="DirectoryInfo"/></returns>
         public static DirectoryInfo GetLogsDirectory()
         {
             var ret = Path.Combine(
@@ -115,6 +121,12 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             return Directory.CreateDirectory(ret);
         }
 
+
+        /// <summary>
+        /// Returns Error Files Directory |
+        /// eg ~/MyExternalDrive/SokkaCorp/Errors
+        /// </summary>
+        /// <returns><seealso cref="DirectoryInfo"/></returns>
         public static DirectoryInfo GetErrorDirectory()
         {
             var ret = Path.Combine(
@@ -123,6 +135,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             return Directory.CreateDirectory(ret);
         }
 
+        // eg ~/MyExternalDrive/SokkaCorp/Processed
         public static DirectoryInfo GetProcessedDirectory()
         {
             var ret = Path.Combine(

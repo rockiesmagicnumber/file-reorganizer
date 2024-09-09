@@ -12,12 +12,18 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/bin/Debug/net8.0/MediaLibraryOrganizer.dll",
             "args": [
-                // "--refresh-json",
-                "--repopulate-json",
-                //"--source",
-                //"/media/rockiesmagicnumber/2094-D1F3",
+                // dummy test points
+                "--source",
+                "/home/rockiesmagicnumber/source",
                 "--output",
-                "/media/the-archive/jmartin-media",
+                "/home/rockiesmagicnumber/output",
+                // original test points
+                // // "--refresh-json",
+                // "--repopulate-json",
+                // //"--source",
+                // //"/media/rockiesmagicnumber/2094-D1F3",
+                // "--output",
+                // "/media/the-archive/jmartin-media",
                 "--exclude-duplicates"
             ],
             "cwd": "${workspaceFolder}",
