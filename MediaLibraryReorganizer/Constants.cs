@@ -10,7 +10,6 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         {
             public const string Source = "--source";
             public const string Output = "--output";
-            public const string ExcludeDuplicates = "--exclude-duplicates";
             public const string RefreshJsonBackup = "--refresh-json";
             public const string RepopulateJsonBackup = "--repopulate-json";
         }

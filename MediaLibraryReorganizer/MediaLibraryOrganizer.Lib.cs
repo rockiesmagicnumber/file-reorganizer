@@ -8,6 +8,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
     using MDE = MetadataExtractor;
     using Serilog;
     using MetadataExtractor.Formats.QuickTime;
+    using System.Runtime.CompilerServices;
 
     public class MediaLibraryOrganizer
     {
@@ -107,6 +108,38 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             {
                 var jobReturn = new JobReturn();
 
+                // check for a readonly directory
+                if (this.Options.SourceDirectoryInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
+                {
+                    // it's read-only, let's make a copy of the whole thing so we can manipulate it at will
+                    var newSourcePath = Path.Combine(Statics.GetSokkaCorpDirectory().FullName, this.Options.SourceDirectoryInfo.Name);
+                    var newSourceDir = Directory.CreateDirectory(newSourcePath);
+                    var allFiles = this.Options.SourceDirectoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories);
+                    foreach (var file in allFiles)
+                    {
+                        string newDirectoryPath = file.Directory.FullName.Replace(this.Options.SourceDirectoryInfo.FullName, newSourceDir.FullName);
+                        string newfilePath = Path.Combine(newDirectoryPath, file.Name);
+                        Directory.CreateDirectory(newDirectoryPath);
+                        try
+                        {
+                            FileInfo newFileInfo = new FileInfo(newfilePath);
+                            if (newFileInfo.Exists)
+                            {
+                                // file already exists, skip it
+                                continue;
+                            }
+
+                            file.CopyTo(newfilePath);
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                    }
+
+                    this.Options.SourceDirectoryInfo = newSourceDir;
+                }
+
                 this.UnzipAllRecursively(this.Options.SourceDirectoryInfo);
                 this.ProcessDirectory(this.Options.SourceDirectoryInfo);
                 jobReturn.Success = true;
@@ -148,14 +181,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             StaticLog.Enter($"{nameof(this.ProcessDirectory)} - {directory.FullName}");
             try
             {
-                var childDirectories = directory.EnumerateDirectories();
-                var childFiles = directory.EnumerateFiles();
-
-                // process all child directories
-                foreach (var child in childDirectories)
-                {
-                    this.ProcessDirectory(child);
-                }
+                var childFiles = directory.EnumerateFiles("*.*", SearchOption.AllDirectories);
 
                 // process all files
                 int cnt = 0;
@@ -196,12 +222,6 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                         Log.Information($"File already processed, skipping | {fileInfo}");
                         return;
                     }
-
-                    if (this.Options.ExcludeDuplicates)
-                    {
-                        Log.Information($"Hash already processed, skipping | {fileInfo} | {fileSHAchksum}");
-                        return;
-                    }
                 }
                 else
                 {
@@ -226,28 +246,11 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         private FileInfo CreateDestinationFile(FileInfo fileInfo, FileInfo destinationPath)
         {
-            if (!this.Options.ExcludeDuplicates)
-            {
-                if (destinationPath.Exists)
-                {
-                    do
-                    {
-                        string newFilename = Path.Combine(
-                            destinationPath.DirectoryName,
-                            Path.GetFileNameWithoutExtension(destinationPath.FullName),
-                            Guid.NewGuid().ToString(),
-                            destinationPath.Extension);
-                        destinationPath = new FileInfo(newFilename);
-                    }
-                    while (destinationPath.Exists);
-                }
-            }
-
             Log.Information($"Copying {fileInfo.FullName} => {destinationPath.FullName}");
 
             if (!destinationPath.Exists)
             {
-                destinationPath = fileInfo.CopyTo(destinationPath.FullName);
+                fileInfo.MoveTo(destinationPath.FullName);
             }
 
             return destinationPath;

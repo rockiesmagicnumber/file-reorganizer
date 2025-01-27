@@ -210,15 +210,18 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         public static DirectoryInfo GetUnzippedDirectory(MediaLibraryOrganizerOptions options)
         {
-            var ret = Path.Combine(
-                options.SourceDirectoryInfo.FullName,
-                Constants.RuntimeDirectories.UnzippedDirectoryName);
+            string ret = Path.Combine(
+                path1: options.SourceDirectoryInfo.FullName,
+                path2: Constants.RuntimeDirectories.UnzippedDirectoryName);
             return Directory.CreateDirectory(ret);
         }
 
         public static void UnZip(FileInfo filePath, MediaLibraryOrganizerOptions options)
         {
-            ZipFile.ExtractToDirectory(filePath.FullName, GetUnzippedDirectory(options).FullName, overwriteFiles: true);
+            ZipFile.ExtractToDirectory(
+                sourceArchiveFileName: filePath.FullName,
+                destinationDirectoryName: GetUnzippedDirectory(options).FullName,
+                overwriteFiles: true);
         }
 
         public static bool IsPhoto(this FileInfo filePath)
@@ -260,7 +263,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         public static string GetChecksum(FileInfo file)
         {
             using var stream = new BufferedStream(file.OpenRead(), 1200000);
-            using var sha = SHA256.Create();
+            using var sha = MD5.Create();
             byte[] checksum = sha.ComputeHash(stream);
             return BitConverter.ToString(checksum).Replace("-", string.Empty);
         }

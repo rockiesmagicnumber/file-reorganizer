@@ -14,17 +14,9 @@
             "args": [
                 // dummy test points
                 "--source",
-                "/home/rockiesmagicnumber/source",
+                "/home/rockiesmagicnumber/flashdrive",
                 "--output",
-                "/home/rockiesmagicnumber/output",
-                // original test points
-                // // "--refresh-json",
-                // "--repopulate-json",
-                // //"--source",
-                // //"/media/rockiesmagicnumber/2094-D1F3",
-                // "--output",
-                // "/media/the-archive/jmartin-media",
-                "--exclude-duplicates"
+                "/home/rockiesmagicnumber/output"
             ],
             "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

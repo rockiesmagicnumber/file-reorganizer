@@ -25,7 +25,7 @@ namespace SokkaCorp.MediaLibraryOrganizer
                 .CreateLogger();
 
             // get args
-            DirectoryInfo sourceDirectory = new DirectoryInfo(Assembly.GetEntryAssembly().Location);
+            DirectoryInfo sourceDirectory = new (Assembly.GetEntryAssembly().Location);
             DirectoryInfo outputDirectory = null;
             if (args.Contains(Constants.ArgumentFlags.Source))
             {
@@ -42,10 +42,10 @@ namespace SokkaCorp.MediaLibraryOrganizer
 
             Log.Debug("Source Directory: {executionDirectory}", sourceDirectory.FullName);
 
-            bool readOnly = false; // args.Contains("-ro") || args.Contains("--read-only");
-            bool excludeDuplicates = args.Contains(Constants.ArgumentFlags.ExcludeDuplicates);
-            MediaLibraryOrganizerOptions executionOptions = new MediaLibraryOrganizerOptions(sourceDirectory, readOnly, excludeDuplicates, outputDirectory);
-            MediaLibraryOrganizer pr = new MediaLibraryOrganizer(executionOptions);
+            MediaLibraryOrganizerOptions executionOptions = new (
+                sourceDirectory: sourceDirectory,
+                processedDirectory: outputDirectory);
+            MediaLibraryOrganizer pr = new (executionOptions);
             JobReturn success;
             if (args.Contains(Constants.ArgumentFlags.RefreshJsonBackup))
             {

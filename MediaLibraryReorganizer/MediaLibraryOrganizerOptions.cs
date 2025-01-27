@@ -9,21 +9,15 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         /// <summary>
         /// Initializes a new instance of the <see cref="MediaLibraryOrganizerOptions"/> class.
         /// </summary>
-        /// <param name="originDirectory"></param>
-        /// <param name="isReadOnly"></param>
-        /// <param name="excludeDuplicates"></param>
-        /// <param name="processedDirectory"></param>
+        /// <param name="sourceDirectory">From whence the files come.</param>
+        /// <param name="processedDirectory">Whereto the files shall go.</param>
         public MediaLibraryOrganizerOptions(
-            DirectoryInfo originDirectory,
-            bool isReadOnly,
-            bool excludeDuplicates,
+            DirectoryInfo sourceDirectory,
             DirectoryInfo processedDirectory)
         {
-            this.SourceDirectoryInfo = originDirectory;
+            this.SourceDirectoryInfo = sourceDirectory;
             Statics.SourceDirectory ??= this.SourceDirectoryInfo;
 
-            this.IsReadOnly = isReadOnly;
-            this.ExcludeDuplicates = excludeDuplicates;
             if (processedDirectory != null)
             {
                 Statics.OutputDirectory ??= processedDirectory;
@@ -31,9 +25,5 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         }
 
         public DirectoryInfo SourceDirectoryInfo { get; set; }
-
-        public bool IsReadOnly { get; set; } = false;
-
-        public bool ExcludeDuplicates { get; set; } = false;
     }
 }
