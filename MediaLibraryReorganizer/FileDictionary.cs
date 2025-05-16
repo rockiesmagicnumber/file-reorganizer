@@ -4,14 +4,16 @@
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
+    using System;
     using System.Collections;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
+    using System.Linq;
 
-    public class FileDictionary<T, TK> : IDictionary<string, List<FileInfo>>
-    where T : struct
-    where TK : List<FileInfo>
+    public class FileDictionary : IDictionary<string, List<FileInfo>>
     {
-        private readonly Dictionary<string, List<FileInfo>> dict = [];
+        private readonly Dictionary<string, List<FileInfo>> dict = new Dictionary<string, List<FileInfo>>();
 
         /// <inheritdoc/>
         public List<FileInfo> this[string key]
@@ -20,7 +22,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             {
                 if (!this.dict.TryGetValue(key, out List<FileInfo>? files))
                 {
-                    files = [];
+                    files = new List<FileInfo>();
                 }
 
                 return files;

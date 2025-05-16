@@ -2,6 +2,8 @@
 // Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
+using System;
+
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public class JobReturn

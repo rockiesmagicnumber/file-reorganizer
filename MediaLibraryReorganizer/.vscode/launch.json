@@ -14,9 +14,9 @@
             "args": [
                 // dummy test points
                 "--source",
-                "/home/rockiesmagicnumber/flashdrive",
+                "/mnt/network-storage/streamingmedialibrary/music/",
                 "--output",
-                "/home/rockiesmagicnumber/output"
+                "/mnt/network-storage/streamingmedialibrary/music2/"
             ],
             "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

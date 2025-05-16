@@ -4,201 +4,102 @@
 
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
-    using System.Text.Json;
-    using MDE = MetadataExtractor;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
     using Serilog;
-    using MetadataExtractor.Formats.QuickTime;
-    using System.Runtime.CompilerServices;
 
+    /// <summary>
+    /// Handles the orchestration of media library organization.
+    /// </summary>
     public class MediaLibraryOrganizer
     {
-        private FileDictionary<NString, List<FileInfo>> processedFiles;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MediaLibraryOrganizer"/> class.
+        /// </summary>
+        /// <param name="backupManager">The backup manager dependency.</param>
+        /// <param name="directoryManager">The directory manager dependency.</param>
+        /// <param name="fileProcessor">The file processor dependency.</param>
+        /// <param name="zipProcessor">The zip processor dependency.</param>
+        /// <param name="errors">The list to collect errors.</param>
+        public MediaLibraryOrganizer(BackupManager backupManager, DirectoryManager directoryManager, FileProcessor fileProcessor, ZipProcessor zipProcessor, List<Exception> errors)
+        {
+            this.BackupManager = backupManager;
+            this.DirectoryManager = directoryManager;
+            this.FileProcessor = fileProcessor;
+            this.ZipProcessor = zipProcessor;
+            this.Errors = errors;
+        }
 
-        private MediaLibraryOrganizerOptions Options { get; set; }
+        /// <summary>
+        /// Gets the backup manager instance.
+        /// </summary>
+        public BackupManager BackupManager { get; }
 
+        /// <summary>
+        /// Gets the directory manager instance.
+        /// </summary>
+        public DirectoryManager DirectoryManager { get; }
+
+        /// <summary>
+        /// Gets the file processor instance.
+        /// </summary>
+        public FileProcessor FileProcessor { get; }
+
+        /// <summary>
+        /// Gets the zip processor instance.
+        /// </summary>
+        public ZipProcessor ZipProcessor { get; }
+
+        /// <summary>
+        /// Gets or sets the list of errors encountered during processing.
+        /// </summary>
         private List<Exception> Errors { get; set; }
 
-        public MediaLibraryOrganizer(MediaLibraryOrganizerOptions options)
-        {
-            this.Options = options;
-            this.processedFiles = [];
-            this.Errors = [];
-
-            if (File.Exists(Statics.GetJsonBackup().FullName))
-            {
-                string jsonString = File.ReadAllText(Statics.GetJsonBackup().FullName);
-                if (!string.IsNullOrEmpty(jsonString))
-                {
-                    var files = JsonSerializer.Deserialize<Dictionary<NString, List<string>>>(jsonString);
-                    foreach (var k in files.Keys)
-                    {
-                        this.processedFiles[k] = new List<FileInfo>(files[k].Select(x => new FileInfo(x)));
-                    }
-                }
-            }
-        }
-
-        public JobReturn PruneJsonBackup()
-        {
-            StaticLog.Enter(nameof(this.PruneJsonBackup));
-            var jr = new JobReturn() { Success = true };
-            try
-            {
-                for (int i = 0; i < this.processedFiles.Count; i++)
-                {
-                    var file = this.processedFiles.ElementAt(i);
-                    if (!file.Value.FirstOrDefault()?.Exists ?? true)
-                    {
-                        this.processedFiles.Remove(file.Key);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Ah jeez");
-                jr.HandledError = new AggregateException("error processing dictionary", ex);
-                jr.Success = false;
-            }
-            finally
-            {
-                this.WriteJsonBackup();
-                StaticLog.Exit(nameof(this.PruneJsonBackup));
-            }
-
-            return jr;
-        }
-
-        public JobReturn RepopulateJsonBackup()
-        {
-            StaticLog.Enter(nameof(this.RepopulateJsonBackup));
-            var jobReturn = new JobReturn() { Success = true };
-            try
-            {
-                this.processedFiles = new FileDictionary<NString, List<FileInfo>>();
-                var allThemFiles = Statics.GetProcessedDirectory().EnumerateFiles("*.*", SearchOption.AllDirectories);
-                foreach (var thatFile in allThemFiles)
-                {
-                    try
-                    {
-                        this.ProcessFile(thatFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Ah jeez");
-                        this.Errors.Add(ex);
-                    }
-                }
-
-                jobReturn.Success = true;
-                jobReturn.HandledError = new AggregateException(this.Errors);
-                this.Cleanup();
-                return jobReturn;
-            }
-            finally
-            {
-                this.WriteJsonBackup();
-                StaticLog.Exit(nameof(this.RepopulateJsonBackup));
-            }
-        }
-
-        public JobReturn OrganizeFiles()
+        /// <summary>
+        /// Organizes files from the source directory into the output directory.
+        /// </summary>
+        public void OrganizeFiles()
         {
             StaticLog.Enter(nameof(this.OrganizeFiles));
             try
             {
-                var jobReturn = new JobReturn();
-
-                // check for a readonly directory
-                if (this.Options.SourceDirectoryInfo.Attributes.HasFlag(FileAttributes.ReadOnly))
-                {
-                    // it's read-only, let's make a copy of the whole thing so we can manipulate it at will
-                    var newSourcePath = Path.Combine(Statics.GetSokkaCorpDirectory().FullName, this.Options.SourceDirectoryInfo.Name);
-                    var newSourceDir = Directory.CreateDirectory(newSourcePath);
-                    var allFiles = this.Options.SourceDirectoryInfo.EnumerateFiles("*.*", SearchOption.AllDirectories);
-                    foreach (var file in allFiles)
-                    {
-                        string newDirectoryPath = file.Directory.FullName.Replace(this.Options.SourceDirectoryInfo.FullName, newSourceDir.FullName);
-                        string newfilePath = Path.Combine(newDirectoryPath, file.Name);
-                        Directory.CreateDirectory(newDirectoryPath);
-                        try
-                        {
-                            FileInfo newFileInfo = new FileInfo(newfilePath);
-                            if (newFileInfo.Exists)
-                            {
-                                // file already exists, skip it
-                                continue;
-                            }
-
-                            file.CopyTo(newfilePath);
-                        }
-                        catch (Exception ex)
-                        {
-
-                        }
-                    }
-
-                    this.Options.SourceDirectoryInfo = newSourceDir;
-                }
-
-                this.UnzipAllRecursively(this.Options.SourceDirectoryInfo);
-                this.ProcessDirectory(this.Options.SourceDirectoryInfo);
-                jobReturn.Success = true;
-                jobReturn.HandledError = new AggregateException(this.Errors);
-                this.Cleanup();
-                return jobReturn;
+                this.DirectoryManager.CreateWorkingCopyIfReadOnly();
+                this.UnzipAllRecursively(this.DirectoryManager.WorkingSourceDirectory);
+                this.ProcessDirectory(this.DirectoryManager.WorkingSourceDirectory);
+                this.DirectoryManager.CleanupWorkingDirectories();
             }
             catch (Exception ex)
             {
-                Log.Error("Error", ex);
+                Log.Error("Error organizing files", ex);
                 this.Errors.Add(ex);
-                AggregateException exx = new AggregateException(this.Errors);
-                return new JobReturn()
-                {
-                    HandledError = exx,
-                    Success = false,
-                };
+                throw;
             }
             finally
             {
-                this.WriteJsonBackup();
+                this.BackupManager.WriteJsonBackup();
                 StaticLog.Exit(nameof(this.OrganizeFiles));
             }
         }
 
-        private void WriteJsonBackup()
-        {
-            string jsArchive = JsonSerializer.Serialize(this.processedFiles.ToDictionary(x => x.Key, x => x.Value.Select(y => y.FullName)));
-            File.WriteAllText(Statics.GetJsonBackup().FullName, jsArchive);
-        }
-
-        private void Cleanup()
-        {
-            System.IO.Directory.Delete(Statics.GetUnzippedDirectory(this.Options).FullName, true);
-        }
-
+        /// <summary>
+        /// Processes a directory by iterating through files and using the FileProcessor.
+        /// </summary>
+        /// <param name="directory">The directory to process.</param>
         private void ProcessDirectory(DirectoryInfo directory)
         {
             StaticLog.Enter($"{nameof(this.ProcessDirectory)} - {directory.FullName}");
             try
             {
-                var childFiles = directory.EnumerateFiles("*.*", SearchOption.AllDirectories);
+                FileInfo[] childFiles = directory.GetFiles("*.*", SearchOption.AllDirectories);
+                int childFileCount = childFiles.Length;
 
-                // process all files
                 int cnt = 0;
-                foreach (var cf in childFiles)
+                foreach (FileInfo cf in childFiles)
                 {
                     cnt++;
-                    try
-                    {
-                        Log.Information($"Processing {cnt}/{childFiles.Count()}");
-                        this.ProcessFile(cf);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"Error processing file {cf}", ex);
-                        this.Errors.Add(ex);
-                        this.ProcessErrorFile(cf);
-                    }
+                    Log.Information($"Processing {cnt}/{childFileCount}");
+                    this.FileProcessor.ProcessFile(cf);
                 }
             }
             finally
@@ -207,241 +108,21 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
             }
         }
 
-        private void ProcessFile(FileInfo fileInfo)
-        {
-            StaticLog.Enter($"{nameof(this.ProcessFile)} - {fileInfo.FullName}");
-            try
-            {
-                string fileSHAchksum = Statics.GetChecksum(fileInfo);
-
-                // check if our dictionary already has that checksum
-                if (this.processedFiles.TryGetValue(fileSHAchksum, out var files) && files is not null)
-                {
-                    if (files.Contains(fileInfo))
-                    {
-                        Log.Information($"File already processed, skipping | {fileInfo}");
-                        return;
-                    }
-                }
-                else
-                {
-                    this.processedFiles[fileSHAchksum] = new List<FileInfo>();
-                }
-
-                if (fileInfo.IsZip())
-                {
-                    return;
-                }
-
-                FileInfo destinationPath = this.GetDestinationFile(fileInfo);
-                destinationPath = this.CreateDestinationFile(fileInfo, destinationPath);
-
-                this.processedFiles[fileSHAchksum].Add(destinationPath);
-            }
-            finally
-            {
-                StaticLog.Exit(nameof(this.ProcessFile));
-            }
-        }
-
-        private FileInfo CreateDestinationFile(FileInfo fileInfo, FileInfo destinationPath)
-        {
-            Log.Information($"Copying {fileInfo.FullName} => {destinationPath.FullName}");
-
-            if (!destinationPath.Exists)
-            {
-                fileInfo.MoveTo(destinationPath.FullName);
-            }
-
-            return destinationPath;
-        }
-
-        private FileInfo GetDestinationFile(FileInfo fileInfo)
-        {
-            FileInfo destinationPath;
-            if (fileInfo.IsPhoto())
-            {
-                destinationPath = this.ProcessPhoto(fileInfo);
-            }
-            else if (fileInfo.IsVideo())
-            {
-                destinationPath = this.ProcessVideo(fileInfo);
-            }
-            // else if (file.IsMusic())
-            // {
-            //     //     this.ProcessMusic(file);
-            // }
-            else
-            {
-                destinationPath = this.ProcessMiscFile(fileInfo);
-            }
-
-            return destinationPath;
-        }
-
-        private FileInfo ProcessErrorFile(FileInfo file)
-        {
-            StaticLog.Enter(nameof(this.ProcessErrorFile));
-            try
-            {
-                DirectoryInfo errorDir = Statics.GetErrorMiscDirectory();
-                if (file.IsPhoto())
-                {
-                    errorDir = Statics.GetErrorPhotoDirectory();
-                }
-                else if (file.IsVideo())
-                {
-                    errorDir = Statics.GetErrorVideoDirectory();
-                }
-
-                return new FileInfo(Path.Combine(errorDir.FullName, file.Name));
-            }
-            finally
-            {
-                StaticLog.Exit(nameof(this.ProcessErrorFile));
-            }
-        }
-
-        private FileInfo ProcessPhoto(FileInfo file)
-        {
-            StaticLog.Enter(nameof(this.ProcessPhoto));
-            try
-            {
-                // capture our file as a TagLib Image
-                TagLib.File tagfile = TagLib.File.Create(file.FullName);
-                DateTime photoDt;
-
-                // attempt to get photo datetime from metadata
-                if (tagfile is TagLib.Image.File image && (image?.ImageTag?.DateTime ?? default) != default)
-                {
-                    photoDt = image.ImageTag.DateTime.Value;
-                }
-                else if ((tagfile.Tag.DateTagged ?? default) != default)
-                {
-                    photoDt = tagfile.Tag.DateTagged.Value;
-                }
-                else
-                {
-                    photoDt = file.CreationTime;
-                }
-
-                // get datetime directory
-                return new FileInfo(Path.Combine(Statics.GetPhotoDirectoryFromDateTime(photoDt).FullName, file.Name));
-            }
-            finally
-            {
-                StaticLog.Exit(nameof(this.ProcessPhoto));
-            }
-        }
-
-        private FileInfo ProcessVideo(FileInfo file)
-        {
-            StaticLog.Enter(nameof(this.ProcessVideo));
-            try
-            {
-                TagLib.File tagfile = null;
-
-                // capture our file as a TagLib Image
-                try
-                {
-                    tagfile = TagLib.File.Create(file.FullName);
-                }
-
-                // we're not actually gonna handle the error, TagLib is just gonna fail on .MOV files.
-                catch
-                {
-                }
-
-                // attempt to get photo datetime from metadata
-                DateTime? videoDt = default(DateTime);
-                if (tagfile is not null && (tagfile.Tag?.DateTagged ?? default) != default)
-                {
-                    videoDt = tagfile.Tag.DateTagged.Value;
-                }
-                else if (file?.FullName.EndsWith(Constants.FileExtensions.Video.MOV, StringComparison.InvariantCultureIgnoreCase) ?? false)
-                {
-                    IReadOnlyList<MDE.Directory> tags = MDE.ImageMetadataReader.ReadMetadata(file.FullName);
-                    foreach (var tag in tags)
-                    {
-                        if (tag is QuickTimeMovieHeaderDirectory movie)
-                        {
-                            // 3 just so happens to be the created date
-                            //  https://github.com/drewnoakes/metadata-extractor-dotnet/blob/main/MetadataExtractor/Formats/QuickTime/QuickTimeMovieHeaderDirectory.cs
-                            if (movie.GetObject(QuickTimeMovieHeaderDirectory.TagCreated) is DateTime dt)
-                            {
-                                videoDt = dt;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    videoDt = file.CreationTime;
-                }
-
-                // get datetime directory
-                string videoDirectory = Statics.GetVideoDirectoryFromDateTime(videoDt).FullName;
-                return new FileInfo(Path.Combine(videoDirectory, file.Name));
-            }
-            finally
-            {
-                StaticLog.Exit(nameof(this.ProcessVideo));
-            }
-        }
-
-        private FileInfo ProcessMiscFile(FileInfo file)
-        {
-            StaticLog.Enter(nameof(this.ProcessMiscFile));
-            try
-            {
-                var destinationDirectory = Statics.GetMiscDirectoryFromDateTime(file.CreationTime);
-                string destFileName = Path.Combine(destinationDirectory.FullName, file.Name);
-                return new FileInfo(destFileName);
-            }
-            finally
-            {
-                StaticLog.Exit(nameof(this.ProcessMiscFile));
-            }
-        }
-
+        /// <summary>
+        /// Unzips all ZIP files in the directory recursively.
+        /// </summary>
+        /// <param name="directory">The directory containing ZIP files.</param>
         private void UnzipAllRecursively(DirectoryInfo directory)
         {
             StaticLog.Enter(nameof(this.UnzipAllRecursively));
             try
             {
-                var allZips = directory.EnumerateFiles("*.zip", new EnumerationOptions() { RecurseSubdirectories = true });
-                foreach (var zip in allZips)
-                {
-                    try
-                    {
-                        Log.Information($"Unzipping {zip.FullName}");
-                        Statics.UnZip(zip, this.Options);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error unzipping " + zip.FullName, ex);
-                        this.ProcessErrorFile(zip);
-                    }
-                }
-
-                var newZips = Statics.GetUnzippedDirectory(this.Options).EnumerateFiles("*.zip", new EnumerationOptions { RecurseSubdirectories = true });
-                while (newZips.Any())
-                {
-                    var newZip = newZips.First();
-                    Statics.UnZip(newZip, this.Options);
-                    newZip.Delete();
-                }
+                this.ZipProcessor.ProcessZipsRecursively(directory);
             }
             finally
             {
                 StaticLog.Exit(nameof(this.UnzipAllRecursively));
             }
         }
-
-        // public FileInfo ProcessMusicFile(string file)
-        // {
-
-        // }
     }
 }

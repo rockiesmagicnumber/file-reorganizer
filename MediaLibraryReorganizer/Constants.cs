@@ -2,10 +2,19 @@
 // Copyright (c) SokkaCorp. All rights reserved.
 // </copyright>
 
+using System;
+
 namespace SokkaCorp.MediaLibraryOrganizer.Lib
 {
     public static class Constants
     {
+
+        public static class Music
+        {
+            public const string UnknownArtist = "Unknown Artist";
+            public const string UnknownAlbum = "Unknown Album";
+        }
+
         public static class ArgumentFlags
         {
             public const string Source = "--source";
@@ -87,7 +96,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 public const string MTS = ".MTS";
                 public const string MXF = ".mxf";
                 public const string NSV = ".nsv";
-                public const string OGG = ".ogg";
+                //public const string OGG = ".ogg";
                 public const string OGV = ".ogv";
                 public const string QT = ".qt";
                 public const string RM = ".rm";

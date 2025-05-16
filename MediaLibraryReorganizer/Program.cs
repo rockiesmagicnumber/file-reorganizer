@@ -4,15 +4,24 @@
 
 namespace SokkaCorp.MediaLibraryOrganizer
 {
-    using System.IO;
-    using SokkaCorp.MediaLibraryOrganizer.Lib;
+    using System;
+    using CommandLine;
     using Serilog;
-    using System.Reflection;
+    using SokkaCorp.MediaLibraryOrganizer.Lib;
 
+    /// <summary>
+    /// Entry point class for the media library organizer.
+    /// </summary>
     public class Program
     {
-        public static void Main(string[] args)
+        /// <summary>
+        /// Application entry point.
+        /// </summary>
+        /// <param name="args">Command line arguments.</param>
+        /// <returns>0 for success, 1 for failure.</returns>
+        public static int Main(string[] args)
         {
+            // Setup logging first
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .WriteTo
@@ -24,45 +33,38 @@ namespace SokkaCorp.MediaLibraryOrganizer
                     .Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}")
                 .CreateLogger();
 
-            // get args
-            DirectoryInfo sourceDirectory = new (Assembly.GetEntryAssembly().Location);
-            DirectoryInfo outputDirectory = null;
-            if (args.Contains(Constants.ArgumentFlags.Source))
+            try
             {
-                int sourceIndex = Array.IndexOf(args, Constants.ArgumentFlags.Source);
-                sourceDirectory = Directory.CreateDirectory(args[sourceIndex + 1]);
+                return Parser.Default.ParseArguments<CommandLineOptions>(args)
+                    .MapResult(
+                        opts =>
+                        {
+                            try
+                            {
+                                opts.Execute();
+                                return 0;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Fatal(ex, "An error occurred while executing the command.");
+                                return 1;
+                            }
+                        },
+                        errs =>
+                        {
+                            Log.Error("Invalid command line arguments.");
+                            return 1;
+                        });
             }
-
-            if (args.Contains(Constants.ArgumentFlags.Output))
+            catch (Exception ex)
             {
-                int outputIndex = Array.IndexOf(args, Constants.ArgumentFlags.Output);
-                outputDirectory = Directory.CreateDirectory(args[outputIndex + 1]);
-                Log.Information($"Output Directory: {outputDirectory}");
+                Log.Fatal(ex, "An unhandled exception occurred.");
+                return 1;
             }
-
-            Log.Debug("Source Directory: {executionDirectory}", sourceDirectory.FullName);
-
-            MediaLibraryOrganizerOptions executionOptions = new (
-                sourceDirectory: sourceDirectory,
-                processedDirectory: outputDirectory);
-            MediaLibraryOrganizer pr = new (executionOptions);
-            JobReturn success;
-            if (args.Contains(Constants.ArgumentFlags.RefreshJsonBackup))
+            finally
             {
-                success = pr.PruneJsonBackup();
+                Log.CloseAndFlush();
             }
-            else if (args.Contains(Constants.ArgumentFlags.RepopulateJsonBackup))
-            {
-                success = pr.RepopulateJsonBackup();
-            }
-            else
-            {
-                success = pr.OrganizeFiles();
-            }
-
-            Log.Information("Success: " + success.Success.ToString());
-            Log.Information("\tHandled File Errors: " + success.HandledError?.InnerExceptions?.Count().ToString() ?? "0");
-            Log.CloseAndFlush();
         }
     }
 }
