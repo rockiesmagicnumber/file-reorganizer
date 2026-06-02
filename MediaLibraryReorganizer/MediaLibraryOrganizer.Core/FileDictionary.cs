@@ -7,7 +7,6 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
 
@@ -108,19 +107,8 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
         }
 
         /// <inheritdoc/>
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out List<FileInfo> value)
-        {
-            if (this.dict.TryGetValue(key, out List<FileInfo>? t))
-            {
-                value = t;
-                return true;
-            }
-            else
-            {
-                value = null;
-                return false;
-            }
-        }
+        public bool TryGetValue(string key, out List<FileInfo> value) =>
+            this.dict.TryGetValue(key, out value);
 
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()

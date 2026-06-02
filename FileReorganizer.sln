@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31624.102
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicReorganizer", "MusicReorganizer\MusicReorganizer.csproj", "{39D0257A-261F-466E-92C8-3D610E501DE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaLibraryOrganizer.Core", "MediaLibraryReorganizer\MediaLibraryOrganizer.Core\MediaLibraryOrganizer.Core.csproj", "{B2C8F1A4-7E3D-4B9C-9F01-2A8E4D6C5B10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallpaperReorganizer", "WallpaperReorganizer\WallpaperReorganizer.csproj", "{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoReorganizer", "PhotoReorganizer\PhotoReorganizer.csproj", "{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaLibraryOrganizer", "MediaLibraryReorganizer\MediaLibraryOrganizer.csproj", "{29B87345-A5D6-4ACC-B6B5-3EED0521F298}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,18 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{39D0257A-261F-466E-92C8-3D610E501DE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{39D0257A-261F-466E-92C8-3D610E501DE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{39D0257A-261F-466E-92C8-3D610E501DE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{39D0257A-261F-466E-92C8-3D610E501DE3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4BF67EAD-8A3F-4041-8423-BDA8BCB123D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D06F1ED2-4247-4617-8EA0-AF34CE170CD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C8F1A4-7E3D-4B9C-9F01-2A8E4D6C5B10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C8F1A4-7E3D-4B9C-9F01-2A8E4D6C5B10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C8F1A4-7E3D-4B9C-9F01-2A8E4D6C5B10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C8F1A4-7E3D-4B9C-9F01-2A8E4D6C5B10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29B87345-A5D6-4ACC-B6B5-3EED0521F298}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29B87345-A5D6-4ACC-B6B5-3EED0521F298}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29B87345-A5D6-4ACC-B6B5-3EED0521F298}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29B87345-A5D6-4ACC-B6B5-3EED0521F298}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

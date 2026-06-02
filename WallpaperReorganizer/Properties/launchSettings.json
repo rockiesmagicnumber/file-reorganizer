@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "WallpaperReorganizer": {
-      "commandName": "Project",
-      "commandLineArgs": "process"
-    }
-  }
-}

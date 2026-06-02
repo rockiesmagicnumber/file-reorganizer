@@ -32,11 +32,26 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
 
         public static class RuntimeDirectories
         {
+            /// <summary>
+            /// Under the user-provided output parent: organized imports, logs, manifest, scratch, errors, duplicates.
+            /// </summary>
+            public const string MediaLibraryDirectoryName = "MediaLibrary";
+
+            /// <summary>
+            /// Under <see cref="MediaLibraryDirectoryName"/>: all tool-owned artifacts (logs, manifest, errors, duplicates, unzip scratch).
+            /// </summary>
+            public const string SokkaCorpDirectoryName = "SokkaCorp";
+
+            /// <summary>
+            /// Under the user-provided output parent: reserved for an unorganized archive (created empty; optional manual use).
+            /// </summary>
+            public const string OriginalDirectoryName = "Original";
+
             public const string ErrorDirectoryName = "Errors";
             public const string LogDirectoryName = "Logs";
             public const string ProcessedDirectoryName = "Processed";
-            public const string SokkaCorpDirectoryName = "SokkaCorp";
             public const string UnzippedDirectoryName = "Unzipped";
+            public const string DuplicatesDirectoryName = "Duplicates";
         }
 
         public static class FolderCategories
@@ -140,7 +155,7 @@ namespace SokkaCorp.MediaLibraryOrganizer.Lib
                 public const string MP3 = ".mp3";
                 public const string MPC = ".mpc";
                 public const string MSV = ".msv";
-                public const string NMF = ".nmf ";
+                public const string NMF = ".nmf";
                 public const string OGA = ".oga";
                 public const string OGG = ".ogg";
                 public const string OPUS = ".opus";
