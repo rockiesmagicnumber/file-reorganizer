@@ -4,7 +4,7 @@ Context for automated assistants and contributors working in this repository.
 
 ## Active handoff (2026-06-01)
 
-**WD Passport organize + flash merge** — Phase 1 `--copy` **complete**; Camera.zip manual extract **done**; **consolidation run** (move) and **Phase 2** flash merge **pending** user go-ahead.  
+**WD Passport organize + flash merge** — Phase 1 `--copy` **complete** (`Processed/` populated); consolidation scan **ran** but legacy folders **not cleared** (used `--on-duplicate skip`); **legacy dedupe cleanup** + **Phase 2** flash merge **pending** user go-ahead.  
 → **[`.cursor/handoff/wd-passport-next-steps.md`](.cursor/handoff/wd-passport-next-steps.md)** (full runbook for the next agent).
 
 ## Current status
